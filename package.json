@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@react-login-page/page3": "^1.0.6",
+    "@supabase/supabase-js": "^2.89.0",
+    "axios": "^1.13.2",
+    "multer": "^2.0.2",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.12.0"
+  }
+}
