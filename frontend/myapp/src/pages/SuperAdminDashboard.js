@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import {
-    FaChartPie, FaUsers, FaStore, FaGem, FaCog,
-    FaArrowLeft, FaShieldAlt, FaMapMarkerAlt, FaEnvelope,
-    FaExternalLinkAlt, FaBan, FaCheckCircle, FaSearch,
-    FaHistory, FaUserCircle, FaCalendarAlt, FaTimes, FaPaperPlane
+    FaUsers, FaStore, FaGem, FaShieldAlt, FaMapMarkerAlt, FaEnvelope,
+    FaBan, FaSearch, FaChartPie, FaPaperPlane,
+    FaUserCircle, FaCalendarAlt, FaHistory, FaCheckCircle, FaTimes, FaArrowLeft
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,11 +61,12 @@ const SuperAdminDashboard = () => {
             }
         };
         fetchAllData();
+        // eslint-disable-next-line
     }, []);
 
     const handleBanStore = async (id, currentStatus) => {
         try {
-            await axios.put(`/api/superadmin/ban-store/${id}`);
+            await axios.put(`/ api / superadmin / ban - store / ${id} `);
             showNotification(currentStatus ? 'Store Unbanned' : 'Store Banned');
             // Refresh stores
             const res = await axios.get('/api/superadmin/all-stores');
@@ -78,7 +78,7 @@ const SuperAdminDashboard = () => {
 
     const handleBanUser = async (id, currentStatus) => {
         try {
-            await axios.put(`/api/superadmin/ban-user/${id}`);
+            await axios.put(`/ api / superadmin / ban - user / ${id} `);
             showNotification(currentStatus ? 'User Unbanned' : 'User Banned');
             // Refresh users
             const res = await axios.get('/api/superadmin/users');
@@ -91,7 +91,7 @@ const SuperAdminDashboard = () => {
     const handleViewOrders = async (user) => {
         setSelectedUser(user);
         try {
-            const res = await axios.get(`/api/superadmin/user-orders/${user.id}`);
+            const res = await axios.get(`/ api / superadmin / user - orders / ${user.id} `);
             setUserOrders(res.data);
         } catch (err) {
             showNotification('Error fetching user orders', 'error');
@@ -100,7 +100,7 @@ const SuperAdminDashboard = () => {
 
     const handleUpdateRequestStatus = async (id, status) => {
         try {
-            await axios.patch(`/api/upgrade-requests/${id}/status`, { status });
+            await axios.patch(`/ api / upgrade - requests / ${id}/status`, { status });
             showNotification(`Request ${status} successfully`);
             // Refresh requests and stores
             const [requestsRes, storesRes, statsRes] = await Promise.all([

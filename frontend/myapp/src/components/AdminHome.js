@@ -2,8 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { FaChartLine, FaUsers, FaBoxOpen, FaGem, FaCheck, FaRocket, FaStore } from 'react-icons/fa';
-import { motion, useAnimation } from 'framer-motion';
+import { FaChartLine, FaUsers, FaBoxOpen, FaCheck, FaRocket, FaStore } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { Tilt } from 'react-tilt';
 import FallingLeaves from './FallingLeaves';
 

@@ -8,7 +8,6 @@ const RatingModal = ({ isOpen, onClose, storeId, onRatingSubmitted, initialRatin
     const [hover, setHover] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [globalStats, setGlobalStats] = useState(null);
-    const [loadingStats, setLoadingStats] = useState(true);
     const { showAlert } = useUI();
 
     useEffect(() => {
@@ -16,6 +15,7 @@ const RatingModal = ({ isOpen, onClose, storeId, onRatingSubmitted, initialRatin
             setRating(initialRating || 0);
             fetchStats();
         }
+        // eslint-disable-next-line
     }, [isOpen, initialRating]);
 
     const fetchStats = async () => {
