@@ -6,7 +6,7 @@ import { CartContext } from '../context/CartContext';
 import {
     FaUsers, FaStore, FaGem, FaShieldAlt, FaMapMarkerAlt, FaEnvelope,
     FaBan, FaSearch, FaChartPie, FaPaperPlane,
-    FaUserCircle, FaCalendarAlt, FaHistory, FaCheckCircle, FaTimes, FaArrowLeft
+    FaUserCircle, FaCalendarAlt, FaHistory, FaCheckCircle, FaTimes, FaArrowLeft, FaExternalLinkAlt
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
