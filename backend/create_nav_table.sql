@@ -1,0 +1,11 @@
+USE gather_db;
+
+CREATE TABLE IF NOT EXISTS store_nav_sections (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  store_id INT NOT NULL,
+  label VARCHAR(255) NOT NULL,
+  section_id VARCHAR(255) NOT NULL,
+  order_index INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+);

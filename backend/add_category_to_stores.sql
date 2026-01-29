@@ -1,0 +1,1 @@
+ALTER TABLE stores ADD COLUMN category VARCHAR(100) DEFAULT 'General';
