@@ -15,6 +15,13 @@ const CustomerHome = () => {
     const { user } = useContext(AuthContext);
     const { showAlert } = useUI();
 
+    const getImageUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        return `${baseUrl}${path}`;
+    };
+
     useEffect(() => {
         const fetchStores = async () => {
             try {
@@ -193,7 +200,7 @@ const CustomerHome = () => {
                                         justifyContent: 'center'
                                     }}>
                                         {stores[0].profile_pic ? (
-                                            <img src={stores[0].profile_pic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrl(stores[0].profile_pic)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <FaStore style={{ color: 'white' }} size={24} />
                                         )}
@@ -204,7 +211,7 @@ const CustomerHome = () => {
                                     </div>
                                 </div>
                                 <div style={{ height: '200px', background: '#f8f8f8', borderRadius: '16px', overflow: 'hidden' }}>
-                                    {stores[0].banner ? <img src={stores[0].banner} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.1 }}></div>}
+                                    {stores[0].banner ? <img src={getImageUrl(stores[0].banner)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.1 }}></div>}
                                 </div>
                             </motion.div>
                         )}
@@ -232,7 +239,7 @@ const CustomerHome = () => {
                             <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
                                 {trendingProducts.slice(0, 2).map((p, i) => (
                                     <div key={p.id} style={{ flex: 1, height: '90px', background: '#dcfce7', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => navigate(`/store/${p.store_id}`)}>
-                                        {p.image ? <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-color)', opacity: 0.2 }}></div>}
+                                        {p.image ? <img src={getImageUrl(p.image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-color)', opacity: 0.2 }}></div>}
                                     </div>
                                 ))}
                                 {trendingProducts.length === 0 && (
@@ -285,7 +292,7 @@ const CustomerHome = () => {
                                 >
                                     <div style={{ height: '220px', position: 'relative' }}>
                                         {store.banner ? (
-                                            <img src={store.banner} alt={store.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrl(store.banner)} alt={store.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', background: '#eee' }}></div>
                                         )}
@@ -334,7 +341,7 @@ const CustomerHome = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ width: '30px', height: '30px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #eee' }}>
                                                 {store.profile_pic ? (
-                                                    <img src={store.profile_pic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    <img src={getImageUrl(store.profile_pic)} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
                                                     <div style={{ width: '100%', height: '100%', background: 'var(--primary-color)' }}></div>
                                                 )}
@@ -411,7 +418,7 @@ const CustomerHome = () => {
                                 >
                                     <div style={{ height: '200px', background: '#f8f8f8' }}>
                                         {product.image ? (
-                                            <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrl(product.image)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}><FaShoppingBag size={40} /></div>
                                         )}

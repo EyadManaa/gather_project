@@ -12,6 +12,14 @@ const StoreDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showAlert, showConfirm } = useUI();
+
+    const getImageUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        return `${baseUrl}${path}`;
+    };
+
     const [products, setProducts] = useState([]);
     const [reviews, setReviews] = useState([]);
     const [storeInfo, setStoreInfo] = useState(null);
@@ -284,7 +292,7 @@ const StoreDetails = () => {
                                 marginBottom: '20px'
                             }}>
                                 <img
-                                    src={storeInfo.banner}
+                                    src={getImageUrl(storeInfo.banner)}
                                     alt={`${storeInfo.name} banner`}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
@@ -313,7 +321,7 @@ const StoreDetails = () => {
                             }}>
                                 {storeInfo.profile_pic ? (
                                     <img
-                                        src={storeInfo.profile_pic}
+                                        src={getImageUrl(storeInfo.profile_pic)}
                                         alt={storeInfo.name}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
@@ -533,7 +541,7 @@ const StoreDetails = () => {
                                         )}
                                         <div className="modern-product-image-container">
                                             {p.image ? (
-                                                <img src={p.image} alt={p.name} />
+                                                <img src={getImageUrl(p.image)} alt={p.name} />
                                             ) : (
                                                 <div className="placeholder-product-img">
                                                     <FaStore />
@@ -584,7 +592,7 @@ const StoreDetails = () => {
                                     <p style={{ margin: '0 0 10px 0', color: '#444', lineHeight: '1.5' }}>{r.comment}</p>
                                     {r.image_url && (
                                         <img
-                                            src={r.image_url}
+                                            src={getImageUrl(r.image_url)}
                                             alt="Review"
                                             style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover', display: 'block' }}
                                         />
