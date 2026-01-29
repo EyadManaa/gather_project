@@ -7,6 +7,13 @@ import { motion } from 'framer-motion';
 import { Tilt } from 'react-tilt';
 import FallingLeaves from './FallingLeaves';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 // Animated Counter Component
 const Counter = ({ from, to }) => {
     const [count, setCount] = useState(from);
@@ -293,11 +300,11 @@ const AdminHome = () => {
                             </div>
                             <div style={{ padding: '15px', height: 'calc(100% - 60px)', overflowY: 'auto' }}>
                                 <div style={{ width: '100%', height: '140px', background: '#f1f5f9', borderRadius: '15px', marginBottom: '15px', overflow: 'hidden' }}>
-                                    {store?.banner ? <img src={store.banner} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.2 }}></div>}
+                                    {store?.banner ? <img src={getImageUrl(store.banner)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.2 }}></div>}
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px', marginBottom: '15px', alignItems: 'center' }}>
                                     <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--primary-light)', overflow: 'hidden', border: '2px solid white' }}>
-                                        {store?.profile_pic ? <img src={store.profile_pic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FaStore style={{ margin: '12px', color: 'white' }} />}
+                                        {store?.profile_pic ? <img src={getImageUrl(store.profile_pic)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FaStore style={{ margin: '12px', color: 'white' }} />}
                                     </div>
                                     <div style={{ textAlign: 'left' }}>
                                         <div style={{ width: '120px', fontWeight: 'bold', color: 'var(--primary-dark)', fontSize: '0.9rem' }}>{store?.name}</div>
@@ -308,7 +315,7 @@ const AdminHome = () => {
                                     {products.slice(0, 4).map(product => (
                                         <div key={product.id} style={{ height: '110px', background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
                                             <div style={{ height: '70px', background: '#f8fafc' }}>
-                                                {product.image ? <img src={product.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.1 }}></div>}
+                                                {product.image ? <img src={getImageUrl(product.image)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--primary-light)', opacity: 0.1 }}></div>}
                                             </div>
                                             <div style={{ padding: '5px', textAlign: 'left' }}>
                                                 <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</div>

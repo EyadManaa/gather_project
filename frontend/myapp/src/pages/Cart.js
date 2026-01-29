@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useUI } from '../context/UIContext';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 const Cart = () => {
     const { showAlert } = useUI();
     const [cartItems, setCartItems] = useState([]);
@@ -28,7 +35,7 @@ const Cart = () => {
                     {cartItems.map(item => (
                         <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                                {item.image && <img src={item.image} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', marginRight: '15px', borderRadius: '4px' }} />}
+                                {item.image && <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', marginRight: '15px', borderRadius: '4px' }} />}
                                 <div>
                                     <h4 style={{ margin: '0 0 5px 0' }}>{item.name}</h4>
                                     <p style={{ margin: 0, color: '#666' }}>${item.price} x {item.quantity}</p>

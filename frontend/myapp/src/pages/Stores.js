@@ -5,6 +5,13 @@ import { AuthContext } from '../context/AuthContext';
 import { FaHeart, FaRegHeart, FaSearch, FaArrowRight, FaStar } from 'react-icons/fa';
 import { useUI } from '../context/UIContext';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 const Stores = () => {
     const [stores, setStores] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -282,7 +289,7 @@ const Stores = () => {
                                         )}
 
                                         {store.banner ? (
-                                            <img src={store.banner} alt={store.name} />
+                                            <img src={getImageUrl(store.banner)} alt={store.name} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>No Banner</div>
                                         )}
@@ -321,7 +328,7 @@ const Stores = () => {
                                     <div className="modern-store-footer">
                                         <div className="modern-store-visit-group">
                                             {store.profile_pic ? (
-                                                <img src={store.profile_pic} alt={store.name} className="modern-store-profile" />
+                                                <img src={getImageUrl(store.profile_pic)} alt={store.name} className="modern-store-profile" />
                                             ) : (
                                                 <div className="modern-store-profile" style={{ background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>{store.name.charAt(0)}</div>
                                             )}

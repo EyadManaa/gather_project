@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { uploadToSupabase } = require('../utils/supabaseStorage');
 
 const checkStoreAutoStatus = (store) => {
     if (!store.opening_time || !store.closing_time) return store.is_open;
@@ -24,11 +25,12 @@ const checkStoreAutoStatus = (store) => {
 // Create a new store (Admin/Owner)
 exports.createStore = async (req, res) => {
     const { name, description, profit_percentage, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category } = req.body;
-    // Handle files
-    const profile_pic = req.files && req.files['profile_pic'] ? `http://localhost:5000/${req.files['profile_pic'][0].path.replace('\\', '/')}` : null;
-    const banner = req.files && req.files['banner'] ? `http://localhost:5000/${req.files['banner'][0].path.replace('\\', '/')}` : null;
 
     try {
+        // Handle files - upload to Supabase
+        const profile_pic = req.files && req.files['profile_pic'] ? await uploadToSupabase(req.files['profile_pic'][0], 'stores/profiles') : null;
+        const banner = req.files && req.files['banner'] ? await uploadToSupabase(req.files['banner'][0], 'stores/banners') : null;
+
         const { rows } = await db.execute(
             'INSERT INTO stores (owner_id, name, description, profile_pic, banner, profit_percentage, is_open, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id',
             [req.user.id, name, description, profile_pic, banner, profit_percentage || 0, true, about_content || '', instagram_link || null, tiktok_link || null, facebook_link || null, linkedin_link || null, category || 'General']
@@ -123,8 +125,8 @@ exports.updateStore = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const profile_pic = req.files && req.files['profile_pic'] ? `http://localhost:5000/${req.files['profile_pic'][0].path.replace('\\', '/')}` : stores[0].profile_pic;
-        const banner = req.files && req.files['banner'] ? `http://localhost:5000/${req.files['banner'][0].path.replace('\\', '/')}` : stores[0].banner;
+        const profile_pic = req.files && req.files['profile_pic'] ? await uploadToSupabase(req.files['profile_pic'][0], 'stores/profiles') : stores[0].profile_pic;
+        const banner = req.files && req.files['banner'] ? await uploadToSupabase(req.files['banner'][0], 'stores/banners') : stores[0].banner;
 
         const is_open = req.body.is_open !== undefined ? (req.body.is_open === 'true' || req.body.is_open === true) : stores[0].is_open;
 

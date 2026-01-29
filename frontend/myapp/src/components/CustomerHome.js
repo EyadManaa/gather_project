@@ -19,7 +19,7 @@ const CustomerHome = () => {
         if (!path) return '';
         if (path.startsWith('http://') || path.startsWith('https://')) return path;
         const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        return `${baseUrl}${path}`;
+        return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
     };
 
     useEffect(() => {

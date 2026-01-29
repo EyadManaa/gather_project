@@ -7,6 +7,13 @@ import ModernFileUpload from '../components/ModernFileUpload';
 import { FaGem, FaCheckCircle, FaHistory, FaPaperPlane, FaClock, FaTimesCircle } from 'react-icons/fa';
 import { useUI } from '../context/UIContext';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 const AdminDashboard = () => {
     const { showAlert, showConfirm } = useUI();
     console.log('AdminDashboard Rendering...');
@@ -727,7 +734,7 @@ const AdminDashboard = () => {
                                             style={{ width: '150px', height: '150px', borderRadius: '50%', border: '3px solid var(--secondary-color)' }}
                                         >
                                             {store.profile_pic ? (
-                                                <img src={store.profile_pic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img src={getImageUrl(store.profile_pic)} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
                                                 <div style={{ width: '100%', height: '100%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
                                                     No Image
@@ -783,7 +790,7 @@ const AdminDashboard = () => {
                                         style={{ width: '100%', height: '150px', borderRadius: '12px' }}
                                     >
                                         {store.banner ? (
-                                            <img src={store.banner} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrl(store.banner)} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
                                                 No Banner Uploaded
@@ -1060,7 +1067,7 @@ const AdminDashboard = () => {
                                             gap: '15px'
                                         }}>
                                             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                                {p.image && <img src={p.image} alt={p.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }} />}
+                                                {p.image && <img src={getImageUrl(p.image)} alt={p.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }} />}
                                                 <div>
                                                     <h4 style={{ margin: 0 }}>{p.name}</h4>
                                                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>

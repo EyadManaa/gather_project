@@ -1,9 +1,10 @@
 const db = require('../config/db');
+const { uploadToSupabase } = require('../utils/supabaseStorage');
 
 exports.addReview = async (req, res) => {
     const { storeId, rating, comment } = req.body;
-    const image_url = req.file ? `http://localhost:5000/${req.file.path.replace('\\', '/')}` : null;
     try {
+        const image_url = req.file ? await uploadToSupabase(req.file, 'reviews') : null;
         await db.execute(
             'INSERT INTO reviews (user_id, store_id, rating, comment, image_url) VALUES ($1, $2, $3, $4, $5)',
             [req.user.id, storeId, rating, comment, image_url]

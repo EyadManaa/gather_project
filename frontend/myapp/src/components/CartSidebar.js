@@ -3,6 +3,13 @@ import { CartContext } from '../context/CartContext';
 import { FaTimes, FaPlus, FaMinus, FaTrash } from 'react-icons/fa';
 import { useUI } from '../context/UIContext';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 const CartSidebar = () => {
     const { cartItems, isCartOpen, toggleCart, updateQuantity, removeFromCart, checkout } = useContext(CartContext);
     const { showAlert } = useUI();
@@ -65,7 +72,7 @@ const CartSidebar = () => {
                         <div style={{ flex: 1 }}>
                             {cartItems.map(item => (
                                 <div key={item.id} style={{ display: 'flex', marginBottom: '15px', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px', alignItems: 'center' }}>
-                                    {item.image && <img src={item.image} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', marginRight: '10px' }} />}
+                                    {item.image && <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', marginRight: '10px' }} />}
                                     <div style={{ flex: 1 }}>
                                         <h4 style={{ margin: '0 0 5px 0', fontSize: '0.9rem' }}>{item.name}</h4>
                                         <p style={{ margin: '0 0 8px 0', color: 'var(--primary-color)', fontWeight: 'bold' }}>${item.price}</p>

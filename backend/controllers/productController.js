@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { uploadToSupabase } = require('../utils/supabaseStorage');
 
 exports.getProducts = async (req, res) => {
     const storeId = req.query.storeId;
@@ -28,9 +29,10 @@ exports.getProductById = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
     const { storeId, name, description, price, section } = req.body;
-    const image = req.file ? `http://localhost:5000/${req.file.path.replace('\\', '/')}` : null;
 
     try {
+        const image = req.file ? await uploadToSupabase(req.file, 'products') : null;
+
         // Verify ownership
         const { rows: stores } = await db.execute('SELECT * FROM stores WHERE id = $1 AND owner_id = $2', [storeId, req.user.id]);
         if (stores.length === 0 && req.user.role !== 'super_admin') {
@@ -78,7 +80,7 @@ exports.updateProduct = async (req, res) => {
         }
 
         const product = products[0];
-        const image = req.file ? `http://localhost:5000/${req.file.path.replace('\\', '/')}` : product.image;
+        const image = req.file ? await uploadToSupabase(req.file, 'products') : product.image;
         const out_of_stock = req.body.is_out_of_stock !== undefined ? (req.body.is_out_of_stock === 'true' || req.body.is_out_of_stock === true) : product.is_out_of_stock;
 
         await db.execute(
