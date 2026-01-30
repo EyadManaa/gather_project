@@ -188,6 +188,8 @@ const Navbar = () => {
                         background: var(--primary-dark);
                         flex-direction: column;
                         justify-content: center;
+                        align-items: center;
+                        text-align: center;
                         padding: 40px;
                         box-shadow: -5px 0 15px rgba(0,0,0,0.1);
                         z-index: 1000;
