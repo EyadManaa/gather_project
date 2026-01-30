@@ -66,7 +66,7 @@ const SuperAdminDashboard = () => {
 
     const handleBanStore = async (id, currentStatus) => {
         try {
-            await axios.put(`/ api / superadmin / ban - store / ${id} `);
+            await axios.put(`/api/superadmin/ban-store/${id} `);
             showNotification(currentStatus ? 'Store Unbanned' : 'Store Banned');
             // Refresh stores
             const res = await axios.get('/api/superadmin/all-stores');
@@ -78,7 +78,7 @@ const SuperAdminDashboard = () => {
 
     const handleBanUser = async (id, currentStatus) => {
         try {
-            await axios.put(`/ api / superadmin / ban - user / ${id} `);
+            await axios.put(`/api/superadmin/ban-user/${id} `);
             showNotification(currentStatus ? 'User Unbanned' : 'User Banned');
             // Refresh users
             const res = await axios.get('/api/superadmin/users');
@@ -91,7 +91,7 @@ const SuperAdminDashboard = () => {
     const handleViewOrders = async (user) => {
         setSelectedUser(user);
         try {
-            const res = await axios.get(`/ api / superadmin / user - orders / ${user.id} `);
+            const res = await axios.get(`/api/superadmin/user-orders/${user.id} `);
             setUserOrders(res.data);
         } catch (err) {
             showNotification('Error fetching user orders', 'error');
@@ -100,7 +100,7 @@ const SuperAdminDashboard = () => {
 
     const handleUpdateRequestStatus = async (id, status) => {
         try {
-            await axios.patch(`/ api / upgrade - requests / ${id}/status`, { status });
+            await axios.patch(`/api/upgrade-requests/${id}/status`, { status });
             showNotification(`Request ${status} successfully`);
             // Refresh requests and stores
             const [requestsRes, storesRes, statsRes] = await Promise.all([
