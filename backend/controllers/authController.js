@@ -31,9 +31,16 @@ exports.register = async (req, res) => {
         const validRoles = ['user', 'admin'];
         const userRole = validRoles.includes(role) ? role : 'user';
 
+        // Check for 'name' coming from Flutter app, fallback to 'username'
+        const finalUsername = username || req.body.name;
+
+        if (!finalUsername) {
+            return res.status(400).json({ message: 'Username/Name is required' });
+        }
+
         const { rows } = await db.execute(
             'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id',
-            [username, email, hashedPassword, userRole]
+            [finalUsername, email, hashedPassword, userRole]
         );
 
         const userId = rows[0].id;
@@ -81,6 +88,14 @@ exports.login = async (req, res) => {
 
         if (user.is_banned) {
             return res.status(403).json({ message: 'Your account has been restricted. Please contact support.' });
+        }
+
+        // 🛡️ CRITICAL FIX: Handle users synced from Supabase Auth who have no local password
+        if (!user.password) {
+            console.error('Login attempt for user with no local password (likely synced from Supabase Auth):', email);
+            return res.status(401).json({
+                message: 'This account was created via Supabase Auth. Please login using Supabase or reset your password.'
+            });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
