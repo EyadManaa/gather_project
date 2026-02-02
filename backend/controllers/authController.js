@@ -61,6 +61,15 @@ exports.login = async (req, res) => {
         return res.status(400).json({ message: 'Please enter all fields' });
     }
 
+    console.log('Login attempt for:', email);
+    console.log('Password type:', typeof password);
+    // Explicitly convert to string if it's not (though express.json() usually handles this, 
+    // but if the client sends an object, we need to catch it)
+    if (typeof password !== 'string') {
+        console.error('Invalid password format received:', password);
+        return res.status(400).json({ message: 'Invalid password format' });
+    }
+
     try {
         const { rows: users } = await db.execute('SELECT * FROM users WHERE email = $1', [email]);
 
