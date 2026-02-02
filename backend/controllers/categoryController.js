@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 exports.getCategories = async (req, res) => {
     try {
-        const { rows } = await db.execute('SELECT DISTINCT category FROM stores WHERE category IS NOT NULL AND category != ""');
+        const { rows } = await db.execute("SELECT DISTINCT category FROM stores WHERE category IS NOT NULL AND category != ''");
 
         // Format for Flutter app (expects {id, name})
         const categories = rows.map((row, index) => ({
