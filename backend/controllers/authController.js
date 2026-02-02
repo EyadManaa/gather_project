@@ -9,11 +9,12 @@ const generateToken = (id, role) => {
 };
 
 exports.register = async (req, res) => {
-    const { username, email, password, role } = req.body;
+    const { username, email, password, role, name } = req.body;
+    const finalUsername = username || name;
 
     // Simple validation
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: 'Please enter all fields' });
+    if (!finalUsername || !email || !password) {
+        return res.status(400).json({ message: 'Please enter all fields (Name, Email, Password)' });
     }
 
     try {
@@ -30,13 +31,6 @@ exports.register = async (req, res) => {
         // Create user (force 'user' role for public registration unless specified otherwise)
         const validRoles = ['user', 'admin'];
         const userRole = validRoles.includes(role) ? role : 'user';
-
-        // Check for 'name' coming from Flutter app, fallback to 'username'
-        const finalUsername = username || req.body.name;
-
-        if (!finalUsername) {
-            return res.status(400).json({ message: 'Username/Name is required' });
-        }
 
         const { rows } = await db.execute(
             'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id',
