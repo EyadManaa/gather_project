@@ -17,7 +17,8 @@ exports.addReview = async (req, res) => {
 };
 
 exports.getReviews = async (req, res) => {
-    const storeId = req.params.storeId;
+    const storeId = req.params.storeId || req.query.store_id; // Support both path and query param
+    if (!storeId) return res.status(400).json({ message: 'Store ID is required' });
     try {
         const { rows: reviews } = await db.execute(
             `SELECT r.*, u.username 

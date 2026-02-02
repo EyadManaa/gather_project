@@ -61,7 +61,8 @@ exports.getStores = async (req, res) => {
         }));
         res.json(enrichedStores);
     } catch (err) {
-        res.status(500).json({ message: 'Error fetching stores' });
+        console.error('Error fetching stores:', err);
+        res.status(500).json({ message: 'Error fetching stores', error: err.message });
     }
 };
 
