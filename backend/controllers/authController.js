@@ -44,7 +44,7 @@ exports.register = async (req, res) => {
             token,
             user: {
                 id: userId,
-                username,
+                username: finalUsername,
                 email,
                 role: userRole,
             },
