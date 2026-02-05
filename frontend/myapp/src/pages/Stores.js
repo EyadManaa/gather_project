@@ -178,7 +178,8 @@ const Stores = () => {
                     WebkitOverflowScrolling: 'touch',
                     transform: showNav ? 'translateY(0)' : 'translateY(-100px)',
                     opacity: showNav ? 1 : 0,
-                    transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)'
+                    transition: 'all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                    transitionDelay: showNav ? '0.2s' : '0s'
                 }} className="category-nav">
                     <style>{`
                         .category-nav::-webkit-scrollbar { display: none; }
