@@ -675,7 +675,7 @@ const StoreDetails = () => {
                         </div>
                     )}
 
-                    {user && (
+                    {user ? (
                         <form id="review-form" onSubmit={submitReview} className="card" style={{ marginTop: '20px', backgroundColor: '#f9f9f9', padding: '25px', borderRadius: '15px' }}>
                             <h4 style={{ color: 'var(--primary-dark)', marginBottom: '20px' }}>Share Your Experience</h4>
 
@@ -729,6 +729,14 @@ const StoreDetails = () => {
                                 Post Your Review
                             </button>
                         </form>
+                    ) : (
+                        <div className="card" style={{ marginTop: '20px', backgroundColor: '#f9f9f9', padding: '30px', borderRadius: '15px', textAlign: 'center' }}>
+                            <h4 style={{ color: 'var(--primary-dark)', marginBottom: '15px' }}>Have you visited this store?</h4>
+                            <p style={{ color: '#666', marginBottom: '20px' }}>Share your experience with others.</p>
+                            <Link to="/login" className="btn btn-primary" style={{ padding: '10px 25px', borderRadius: '20px', textDecoration: 'none' }}>
+                                Login to Write a Review
+                            </Link>
+                        </div>
                     )}
                 </div>
 
