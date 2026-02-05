@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const OrderHistory = () => {
     const [orders, setOrders] = useState([]);
@@ -19,7 +20,17 @@ const OrderHistory = () => {
         fetchOrders();
     }, []);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return (
+        <div style={{
+            minHeight: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <LoadingSpinner message="Loading your orders..." />
+        </div>
+    );
 
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>

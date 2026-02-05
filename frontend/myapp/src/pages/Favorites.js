@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { FaHeart, FaArrowRight } from 'react-icons/fa';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const getImageUrl = (path) => {
     if (!path) return '';
@@ -63,7 +64,17 @@ const Favorites = () => {
         }
     };
 
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading your favorites...</div>;
+    if (loading) return (
+        <div style={{
+            minHeight: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <LoadingSpinner message="Loading your favorites..." />
+        </div>
+    );
 
     return (
         <div style={{ paddingBottom: '60px' }}>

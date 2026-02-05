@@ -1,224 +1,368 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { FaShoppingCart, FaBars, FaTimes } from 'react-icons/fa';
+import { HiOutlineHome, HiOutlineBuildingStorefront, HiOutlineHeart, HiOutlineClipboardDocumentList, HiOutlineEnvelope, HiOutlineShieldCheck, HiOutlineShoppingBag, HiOutlineArrowRightOnRectangle, HiOutlineArrowLeftOnRectangle, HiOutlineUserPlus } from 'react-icons/hi2';
+import { motion, AnimatePresence } from 'framer-motion';
 import whiteLogo from '../assets/WGatherLogo1.png';
+
+const NavItem = React.memo(({ to, icon: Icon, label, currentPath }) => {
+    const isActive = currentPath === to;
+    return (
+        <Link to={to} className={`bottom-nav-item ${isActive ? 'active' : ''}`} style={{ position: 'relative' }}>
+            <AnimatePresence>
+                {isActive && (
+                    <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 25
+                        }}
+                        className="active-pill-bg"
+                    />
+                )}
+            </AnimatePresence>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Icon size={22} />
+                <AnimatePresence>
+                    {isActive && (
+                        <motion.span
+                            initial={{ width: 0, opacity: 0, scale: 0.8 }}
+                            animate={{ width: 'auto', opacity: 1, scale: 1 }}
+                            exit={{ width: 0, opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.2 }}
+                            className="nav-label"
+                        >
+                            {label}
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+            </div>
+        </Link>
+    );
+});
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
     const { toggleCart, cartItems } = useContext(CartContext);
-    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
-    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+    // SCROLL TRACKING FOR MOBILE HIDE/SHOW
+    const [isVisible, setIsVisible] = useState(true);
+    const lastScrollY = useRef(0);
+    const scrollThreshold = 10; // Minimum scroll distance to trigger change
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // On desktop, always show
+            if (window.innerWidth > 992) {
+                setIsVisible(true);
+                return;
+            }
+
+            if (Math.abs(currentScrollY - lastScrollY.current) < scrollThreshold) {
+                return;
+            }
+
+            if (currentScrollY > lastScrollY.current && currentScrollY > 90) {
+                // Scrolling down
+                setIsVisible(false);
+            } else {
+                // Scrolling up
+                setIsVisible(true);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    if (location.pathname.startsWith('/store/') ||
-        location.pathname.startsWith('/admin/dashboard') ||
+    if (location.pathname.startsWith('/admin/dashboard') ||
         location.pathname.startsWith('/super-admin/dashboard') ||
         location.pathname === '/superlogin' ||
-        location.pathname === '/login' ||
-        location.pathname === '/register') {
+        location.pathname.startsWith('/store/') ||
+        isAuthPage) {
         return null;
     }
 
+
     return (
-        <nav style={{
-            background: 'var(--primary-color)',
-            padding: '0 40px',
-            color: 'white',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '90px',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            backdropFilter: 'blur(10px)',
-            background: 'rgba(16, 185, 129, 0.95)'
-        }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                margin: '0 auto',
-                position: 'relative'
-            }}>
-                {/* BRAND - LEFT */}
-                <div className="nav-brand-container" style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                    <Link to={user && user.role === 'super_admin' ? "/super-admin/dashboard" : "/"} style={{ display: 'flex', alignItems: 'center' }} onClick={() => setIsMenuOpen(false)}>
-                        <img src={whiteLogo} alt="Gather" style={{ height: '140px', objectFit: 'contain', marginTop: '10px' }} />
-                    </Link>
-                </div>
+        <>
+            <motion.nav
+                className="main-navbar"
+                animate={{
+                    y: isVisible ? 0 : -100,
+                    opacity: isVisible ? 1 : 0
+                }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                style={{
+                    padding: '0 40px',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '90px',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center'
+                }}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    margin: '0 auto',
+                    position: 'relative'
+                }}>
+                    {/* BRAND - LEFT */}
+                    <div className="nav-brand-container" style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                        <Link to={user && user.role === 'super_admin' ? "/super-admin/dashboard" : "/"} style={{ display: 'flex', alignItems: 'center' }}>
+                            <img src={whiteLogo} alt="Gather" style={{ height: '140px', objectFit: 'contain', marginTop: '10px' }} />
+                        </Link>
+                    </div>
 
-                {/* MOBILE MENU TOGGLE */}
-                <button
-                    onClick={toggleMenu}
-                    className="mobile-menu-toggle"
-                    style={{
-                        display: 'none',
-                        background: 'none',
-                        border: 'none',
-                        color: 'white',
-                        fontSize: '1.5rem',
-                        cursor: 'pointer',
-                        zIndex: 1001
-                    }}
-                >
-                    {isMenuOpen ? <FaTimes /> : <FaBars />}
-                </button>
+                    {/* NAV LINKS - CENTER (DESKTOP) */}
+                    <div
+                        className="desktop-nav-links"
+                        style={{
+                            display: 'flex',
+                            gap: '25px',
+                            alignItems: 'center',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        {(!user || user.role !== 'super_admin') && (
+                            <Link to="/" style={linkStyle}>Home</Link>
+                        )}
+                        <Link to="/stores" style={linkStyle}>Stores</Link>
+                        {user && (
+                            <>
+                                {user.role !== 'super_admin' && (
+                                    <>
+                                        <Link to="/favorites" style={linkStyle}>Favorites</Link>
+                                        <Link to="/orders" style={linkStyle}>Orders</Link>
+                                        <Link to="/contact" style={linkStyle}>Contact</Link>
+                                    </>
+                                )}
+                                {user.role === 'admin' && (
+                                    <Link to="/admin/dashboard" style={linkStyle}>Dashboard</Link>
+                                )}
+                                {user.role === 'super_admin' && (
+                                    <Link to="/super-admin/dashboard" style={linkStyle}>Admin Panel</Link>
+                                )}
+                            </>
+                        )}
+                    </div>
 
-                {/* NAV LINKS - CENTER/MOBILE */}
-                <div
-                    className={`nav-links ${isMenuOpen ? 'open' : ''}`}
-                    style={{
-                        display: 'flex',
-                        gap: '25px',
-                        alignItems: 'center',
-                        transition: 'all 0.3s ease'
-                    }}
-                >
-                    {(!user || user.role !== 'super_admin') && (
-                        <Link to="/" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Home</Link>
-                    )}
-                    <Link to="/stores" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Stores</Link>
-                    {user && (
-                        <>
-                            {user.role !== 'super_admin' && (
-                                <>
-                                    <Link to="/favorites" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Favorites</Link>
-                                    <Link to="/orders" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Orders</Link>
-                                    <Link to="/contact" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Contact</Link>
-                                </>
-                            )}
-                            {user.role === 'admin' && (
-                                <Link to="/admin/dashboard" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                            )}
-                            {user.role === 'super_admin' && (
-                                <Link to="/super-admin/dashboard" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Admin Panel</Link>
-                            )}
-                        </>
-                    )}
-
-                    {/* MOBILE ONLY AUTH */}
-                    <div className="mobile-auth-links" style={{ display: 'none', flexDirection: 'column', gap: '15px', width: '100%', marginTop: '20px' }}>
+                    {/* AUTH/CART - RIGHT */}
+                    <div
+                        className="auth-cart-container"
+                        style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}
+                    >
                         {user ? (
-                            <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} style={mobileBtnStyle}>Logout</button>
+                            <>
+                                {user.role === 'user' && (
+                                    <button onClick={toggleCart} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s' }}>
+                                        <HiOutlineShoppingBag size={26} />
+                                        <span style={{ marginLeft: '5px', background: 'var(--secondary-color)', color: 'var(--primary-dark)', borderRadius: '50%', padding: '2px 8px', fontSize: '0.8rem', fontWeight: 'bold' }}>{cartItems.length}</span>
+                                    </button>
+                                )}
+                                <button onClick={handleLogout} className="auth-btn logout-btn" style={authBtnStyle}>
+                                    <HiOutlineArrowLeftOnRectangle className="mobile-icon-only" size={24} />
+                                    <span className="desktop-text-only">Logout</span>
+                                </button>
+                            </>
                         ) : (
                             <>
-                                <Link to="/login" style={linkStyle} onClick={() => setIsMenuOpen(false)}>Login</Link>
-                                <Link to="/register" style={{ ...mobileBtnStyle, background: 'white', color: 'var(--primary-color)' }} onClick={() => setIsMenuOpen(false)}>Register</Link>
+                                <Link to="/login" className="auth-btn login-btn" style={linkStyle}>
+                                    <HiOutlineArrowRightOnRectangle className="mobile-icon-only" size={24} />
+                                    <span className="desktop-text-only">Login</span>
+                                </Link>
+                                <Link to="/register" className="auth-btn register-btn" style={{
+                                    background: 'white',
+                                    color: 'var(--primary-color)',
+                                    padding: '8px 24px',
+                                    borderRadius: '30px',
+                                    textDecoration: 'none',
+                                    fontWeight: 'bold',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                    transition: 'all 0.3s ease'
+                                }}>
+                                    <HiOutlineUserPlus className="mobile-icon-only" size={24} />
+                                    <span className="desktop-text-only">Register</span>
+                                </Link>
                             </>
                         )}
                     </div>
                 </div>
+            </motion.nav>
 
-                {/* AUTH/CART - RIGHT (DESKTOP) */}
-                <div
-                    className="desktop-auth-cart"
-                    style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '20px' }}
+            {/* MOBILE BOTTOM NAV */}
+            {!isAuthPage && (
+                <motion.div
+                    className="mobile-bottom-nav"
                 >
-                    {user ? (
+                    <NavItem to="/" icon={HiOutlineHome} label="Home" currentPath={location.pathname} />
+                    <NavItem to="/stores" icon={HiOutlineBuildingStorefront} label="Stores" currentPath={location.pathname} />
+
+                    {/* Favorites for both users and admins */}
+                    {user && (user.role === 'user' || user.role === 'admin') && (
+                        <NavItem to="/favorites" icon={HiOutlineHeart} label="Favs" currentPath={location.pathname} />
+                    )}
+
+                    {/* User-specific items */}
+                    {user && user.role === 'user' && (
                         <>
-                            {user.role === 'user' && (
-                                <button onClick={toggleCart} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s' }}>
-                                    <FaShoppingCart size={22} />
-                                    <span style={{ marginLeft: '5px', background: 'var(--secondary-color)', color: 'var(--primary-dark)', borderRadius: '50%', padding: '2px 8px', fontSize: '0.8rem', fontWeight: 'bold' }}>{cartItems.length}</span>
-                                </button>
-                            )}
-                            <button onClick={handleLogout} style={{
-                                background: 'rgba(255,255,255,0.1)',
-                                border: '1px solid white',
-                                color: 'white',
-                                borderRadius: '30px',
-                                padding: '8px 20px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                transition: 'all 0.3s ease'
-                            }}>
-                                Logout
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/login" style={linkStyle}>Login</Link>
-                            <Link to="/register" style={{
-                                background: 'white',
-                                color: 'var(--primary-color)',
-                                padding: '8px 24px',
-                                borderRadius: '30px',
-                                textDecoration: 'none',
-                                fontWeight: 'bold',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                transition: 'all 0.3s ease'
-                            }}>
-                                Register
-                            </Link>
+                            <NavItem to="/orders" icon={HiOutlineClipboardDocumentList} label="Orders" currentPath={location.pathname} />
+                            <NavItem to="/contact" icon={HiOutlineEnvelope} label="Contact" currentPath={location.pathname} />
                         </>
                     )}
-                </div>
-            </div>
+
+                    {/* Admin-specific items */}
+                    {user && user.role === 'admin' && (
+                        <NavItem to="/admin/dashboard" icon={HiOutlineShieldCheck} label="Dashboard" currentPath={location.pathname} />
+                    )}
+
+                    {/* Guest-specific items */}
+                    {!user && (
+                        <NavItem to="/contact" icon={HiOutlineEnvelope} label="Contact" currentPath={location.pathname} />
+                    )}
+                </motion.div>
+            )}
 
             <style>{`
+                .main-navbar {
+                    background: rgba(16, 185, 129, 0.95);
+                    backdrop-filter: blur(10px);
+                    transition: all 0.3s ease;
+                }
+
+                .mobile-bottom-nav {
+                    display: none;
+                    position: fixed;
+                    bottom: 25px; /* Floating at the bottom */
+                    left: 20px;
+                    right: 20px;
+                    margin: 0 auto;
+                    max-width: 500px;
+                    height: 65px;
+                    background: #022c22; /* Solid Emerald 950 */
+                    border-radius: 40px; /* Pill shape */
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+                    z-index: 2000;
+                    justify-content: space-evenly;
+                    align-items: center;
+                    padding: 0 10px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                }
+
+                .bottom-nav-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: rgba(255,255,255,0.6);
+                    text-decoration: none;
+                    font-size: 0.85rem;
+                    height: 48px;
+                    padding: 0 8px;
+                    transition: all 0.3s ease;
+                    border-radius: 24px;
+                    -webkit-tap-highlight-color: transparent;
+                    outline: none;
+                }
+
+                .bottom-nav-item.active {
+                    color: white;
+                }
+
+                .active-pill-bg {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(255,255,255,0.15);
+                    border-radius: 30px;
+                }
+
+                .nav-label {
+                    font-weight: 600;
+                    white-space: nowrap;
+                }
+
+                .mobile-icon-only {
+                    display: none;
+                }
+
                 @media (max-width: 992px) {
-                    .nav-brand-container {
-                        flex: 1 !important;
+                    .main-navbar {
+                        background: rgba(16, 185, 129, 0.5) !important;
+                        backdrop-filter: blur(15px) !important;
+                    }
+                    .main-navbar {
+                        padding: 0 20px !important;
+                    }
+                    .desktop-nav-links {
+                        display: none !important;
+                    }
+                    .mobile-bottom-nav {
+                        display: flex;
                     }
                     .nav-brand-container img {
                         height: 100px !important;
                     }
-                    .mobile-menu-toggle {
-                        display: block !important;
+                    .mobile-icon-only {
+                        display: block;
+                        font-size: 1.2rem;
                     }
-                    .nav-links {
-                        position: fixed;
-                        top: 0;
-                        right: -100%;
-                        width: 80%;
-                        max-width: 300px;
-                        height: 100vh;
-                        background: var(--primary-dark);
-                        flex-direction: column;
-                        justify-content: center;
+                    .desktop-text-only {
+                        display: none;
+                    }
+                    .auth-btn {
+                        padding: 8px !important;
+                        border-radius: 50% !important;
+                        min-width: 40px;
+                        height: 40px;
+                        display: flex;
                         align-items: center;
-                        text-align: center;
-                        padding: 40px;
-                        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-                        z-index: 1000;
+                        justify-content: center;
                     }
-                    .nav-links.open {
-                        right: 0;
-                    }
-                    .desktop-auth-cart {
-                        display: none !important;
-                    }
-                    .mobile-auth-links {
-                        display: flex !important;
+                    .register-btn {
+                        padding: 8px !important;
                     }
                 }
             `}</style>
-        </nav>
+        </>
     );
 };
 
-const mobileBtnStyle = {
+const authBtnStyle = {
     background: 'rgba(255,255,255,0.1)',
     border: '1px solid white',
     color: 'white',
     borderRadius: '30px',
-    padding: '10px 20px',
+    padding: '8px 20px',
     cursor: 'pointer',
     fontWeight: 'bold',
-    textAlign: 'center',
-    textDecoration: 'none'
+    transition: 'all 0.3s ease',
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center'
 };
 
 const linkStyle = {

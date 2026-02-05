@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -7,6 +7,7 @@ import { FaStar, FaInstagram, FaTiktok, FaFacebook, FaLinkedin, FaShoppingCart, 
 import ModernFileUpload from '../components/ModernFileUpload';
 import RatingModal from '../components/RatingModal';
 import { useUI } from '../context/UIContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const StoreDetails = () => {
     const { id } = useParams();
@@ -24,12 +25,14 @@ const StoreDetails = () => {
     const [reviews, setReviews] = useState([]);
     const [storeInfo, setStoreInfo] = useState(null);
     const [isBanned, setIsBanned] = useState(false);
+    const [loading, setLoading] = useState(true);
     const { user } = useContext(AuthContext);
     const { addToCart, toggleCart, cartItems, isCartOpen, showNotification } = useContext(CartContext);
     const [newReview, setNewReview] = useState({ rating: 0, comment: '', image: null });
     const [hoverRating, setHoverRating] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [navItems, setNavItems] = useState([]);
+    const [productSections, setProductSections] = useState([]);
     const [showNavbar, setShowNavbar] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -54,13 +57,15 @@ const StoreDetails = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [lastScrollY]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
+        setLoading(true);
         try {
             // Check ban status if user is logged in
             if (user) {
                 const banRes = await axios.get(`/api/stores/${id}/ban-status`);
                 if (banRes.data.isBanned) {
                     setIsBanned(true);
+                    setLoading(false);
                     return;
                 }
             }
@@ -80,6 +85,9 @@ const StoreDetails = () => {
             const navRes = await axios.get(`/api/nav/${id}`);
             setNavItems(navRes.data);
 
+            const sectionsRes = await axios.get(`/api/sections/${id}`);
+            setProductSections(sectionsRes.data);
+
             // Fetch user's rating if logged in
             if (user) {
                 const ratingRes = await axios.get(`/api/ratings/${id}`);
@@ -87,13 +95,15 @@ const StoreDetails = () => {
             }
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [id, user]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
         fetchData();
-    }, [id]);
+    }, [fetchData]);
 
     useEffect(() => {
         if (!hasIncremented.current) {
@@ -150,6 +160,30 @@ const StoreDetails = () => {
         acc[section].push(product);
         return acc;
     }, {});
+
+    // Ordered sections based on manage product sections
+    const orderedSectionNames = productSections.map(s => s.name);
+    const availableSections = Object.keys(groupedProducts).sort((a, b) => {
+        const indexA = orderedSectionNames.indexOf(a);
+        const indexB = orderedSectionNames.indexOf(b);
+
+        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
+
+    if (loading) return (
+        <div style={{
+            minHeight: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <LoadingSpinner message="Loading Store Details..." />
+        </div>
+    );
 
     if (isBanned) {
         return (
@@ -510,7 +544,7 @@ const StoreDetails = () => {
 
                 {/* Grouped Products */}
                 {
-                    Object.keys(groupedProducts).length > 0 ? Object.keys(groupedProducts).map(section => (
+                    availableSections.length > 0 ? availableSections.map(section => (
                         <div key={section} style={{ marginBottom: '40px' }}>
                             <h2 id={section.toLowerCase().replace(/\s+/g, '-')} style={{ color: 'var(--primary-dark)', borderBottom: '2px solid var(--secondary-color)', paddingBottom: '10px', marginBottom: '20px' }}>
                                 {section}
@@ -728,6 +762,20 @@ const StoreDetails = () => {
 
                             {/* Social Media Links */}
                             <div style={{ marginTop: '30px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+                                <style>{`
+                                    .social-icon-modern {
+                                        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+                                        display: inline-flex;
+                                        text-decoration: none;
+                                    }
+                                    .social-icon-modern:hover {
+                                        transform: translateY(-5px) scale(1.15);
+                                        filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
+                                    }
+                                    .social-icon-modern:active {
+                                        transform: scale(0.95);
+                                    }
+                                `}</style>
                                 <h4 style={{ margin: '0 0 15px 0', fontSize: '1rem', color: '#666' }}>Follow Us</h4>
                                 <div style={{ display: 'flex', gap: '20px' }}>
                                     {storeInfo.instagram_link && (
@@ -735,9 +783,8 @@ const StoreDetails = () => {
                                             href={storeInfo.instagram_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            style={{ color: '#E1306C', fontSize: '1.8rem', transition: 'transform 0.2s' }}
-                                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                            className="social-icon-modern"
+                                            style={{ color: '#E1306C', fontSize: '1.8rem' }}
                                         >
                                             <FaInstagram />
                                         </a>
@@ -747,9 +794,8 @@ const StoreDetails = () => {
                                             href={storeInfo.tiktok_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            style={{ color: 'black', fontSize: '1.6rem', transition: 'transform 0.2s' }}
-                                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                            className="social-icon-modern"
+                                            style={{ color: 'black', fontSize: '1.6rem' }}
                                         >
                                             <FaTiktok />
                                         </a>
@@ -759,9 +805,8 @@ const StoreDetails = () => {
                                             href={storeInfo.facebook_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            style={{ color: '#1877F2', fontSize: '1.8rem', transition: 'transform 0.2s' }}
-                                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                            className="social-icon-modern"
+                                            style={{ color: '#1877F2', fontSize: '1.8rem' }}
                                         >
                                             <FaFacebook />
                                         </a>
@@ -771,9 +816,8 @@ const StoreDetails = () => {
                                             href={storeInfo.linkedin_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            style={{ color: '#0A66C2', fontSize: '1.8rem', transition: 'transform 0.2s' }}
-                                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                            className="social-icon-modern"
+                                            style={{ color: '#0A66C2', fontSize: '1.8rem' }}
                                         >
                                             <FaLinkedin />
                                         </a>

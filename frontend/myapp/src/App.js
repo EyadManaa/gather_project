@@ -28,7 +28,9 @@ const AppContent = () => {
   const isImmersive = location.pathname.startsWith('/store/') ||
     location.pathname.startsWith('/admin/dashboard') ||
     location.pathname.startsWith('/super-admin/dashboard') ||
-    location.pathname === '/superlogin';
+    location.pathname === '/superlogin' ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
 
   const routes = (
     <Routes>

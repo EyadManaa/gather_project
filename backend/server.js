@@ -36,6 +36,7 @@ app.use('/api/favorites', require('./routes/favoriteRoutes'));
 app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 app.use('/api/upgrade-requests', require('./routes/upgradeRequestRoutes'));
+app.use('/api/sections', require('./routes/sectionRoutes'));
 
 // Global Error Handler
 app.use((err, req, res, next) => {

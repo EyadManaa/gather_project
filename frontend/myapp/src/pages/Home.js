@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import CustomerHome from '../components/CustomerHome';
 import AdminHome from '../components/AdminHome';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Home = () => {
     const { user, loading } = useContext(AuthContext);
@@ -14,27 +15,18 @@ const Home = () => {
         }
     }, [user, loading, navigate]);
 
-    if (loading) {
-        return (
-            <div style={{
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#f8fafc'
-            }}>
-                <div style={{
-                    width: '50px',
-                    height: '50px',
-                    border: '4px solid #e2e8f0',
-                    borderTop: '4px solid var(--primary-color)',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                }}></div>
-                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-            </div>
-        );
-    }
+    if (loading) return (
+        <div style={{
+            height: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f8fafc'
+        }}>
+            <LoadingSpinner message="Identifying session..." />
+        </div>
+    );
 
     // Role-based Routing (Dual Homepage)
     if (user && user.role === 'admin') {

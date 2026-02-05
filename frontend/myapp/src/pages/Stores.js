@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { FaHeart, FaRegHeart, FaSearch, FaArrowRight, FaStar } from 'react-icons/fa';
 import { useUI } from '../context/UIContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const getImageUrl = (path) => {
     if (!path) return '';
@@ -112,7 +113,17 @@ const Stores = () => {
         return acc;
     }, {});
 
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading stores...</div>;
+    if (loading) return (
+        <div style={{
+            minHeight: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            <LoadingSpinner message="Loading stores..." />
+        </div>
+    );
 
     return (
         <div style={{ paddingBottom: '60px', paddingTop: '80px', paddingLeft: '5%', paddingRight: '5%' }}>

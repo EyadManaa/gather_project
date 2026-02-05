@@ -30,12 +30,19 @@ const Register = () => {
     };
 
     return (
-        <div style={{ maxWidth: '400px', margin: '40px auto' }}>
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            padding: '20px'
+        }}>
             <FallingLeaves />
             <Link to="/" className="auth-back-btn">
                 ← Back
             </Link>
-            <div className="card" style={{ borderRadius: '25px' }}>
+            <div className="card auth-card" style={{ borderRadius: '25px', width: '100%', maxWidth: '400px', zIndex: 1 }}>
                 <h2 style={{ textAlign: 'center', color: 'var(--primary-dark)' }}>Create Account</h2>
                 {error && <div style={{ backgroundColor: '#ffebee', color: 'var(--error)', padding: '10px', borderRadius: '4px', marginBottom: '15px' }}>{error}</div>}
                 <form onSubmit={handleSubmit}>

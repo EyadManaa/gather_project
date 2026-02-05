@@ -477,6 +477,7 @@ body {
   color: #64748b;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;
@@ -788,6 +789,21 @@ body {
     top: 15px;
     left: 15px;
     padding: 8px 15px;
+  }
+
+  @media (max-width: 992px) {
+
+    /* Padding for bottom nav */
+    .container {
+      padding-bottom: 90px !important;
+    }
+  }
+
+  /* Mobile Auth Card Transparency */
+  .auth-card {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 }
 

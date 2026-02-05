@@ -9,6 +9,7 @@ import {
     FaUserCircle, FaCalendarAlt, FaHistory, FaCheckCircle, FaTimes, FaArrowLeft, FaExternalLinkAlt
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const SuperAdminDashboard = () => {
     const { user, impersonate } = useContext(AuthContext);
@@ -671,8 +672,15 @@ const SuperAdminDashboard = () => {
     };
 
     if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} style={{ fontSize: '3rem' }}>🌿</motion.div>
+        <div style={{
+            height: '100vh',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f8fafc'
+        }}>
+            <LoadingSpinner message="Loading dashboard..." />
         </div>
     );
 
