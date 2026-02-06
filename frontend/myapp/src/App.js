@@ -19,6 +19,7 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperLogin from './pages/SuperLogin';
 import Favorites from './pages/Favorites';
 import BannedNotice from './pages/BannedNotice';
+import Profile from './pages/Profile';
 
 import Stores from './pages/Stores';
 import Contact from './pages/Contact';
@@ -41,6 +42,7 @@ const AppContent = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/store/:id" element={<StoreDetails />} />
       <Route path="/cart" element={<Cart />} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="/favorites" element={<Favorites />} />
       <Route path="/orders" element={<OrderHistory />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

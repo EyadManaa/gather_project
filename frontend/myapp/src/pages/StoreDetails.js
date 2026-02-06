@@ -3,23 +3,147 @@ import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { FaStar, FaInstagram, FaTiktok, FaFacebook, FaLinkedin, FaShoppingCart, FaStore, FaShieldAlt, FaArrowLeft } from 'react-icons/fa';
+import { FaStar, FaInstagram, FaTiktok, FaFacebook, FaLinkedin, FaShoppingCart, FaStore, FaShieldAlt, FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import ModernFileUpload from '../components/ModernFileUpload';
 import RatingModal from '../components/RatingModal';
 import { useUI } from '../context/UIContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
+// Helper to darken/lighten color
+const adjustColor = (color, amount) => {
+    const clamp = (val) => Math.min(Math.max(val, 0), 255);
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = clamp((num >> 16) + amount);
+    const g = clamp(((num >> 8) & 0x00FF) + amount);
+    const b = clamp((num & 0x0000FF) + amount);
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+};
+
+const ProductScrollSection = ({ products, addToCart, getImageUrl, user, storeInfo }) => {
+    const scrollRef = useRef(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
+
+    const checkScroll = useCallback(() => {
+        if (scrollRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+            setShowLeftArrow(scrollLeft > 10);
+            setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+        }
+    }, []);
+
+    useEffect(() => {
+        checkScroll();
+        window.addEventListener('resize', checkScroll);
+        return () => window.removeEventListener('resize', checkScroll);
+    }, [checkScroll, products]);
+
+    const scroll = (direction) => {
+        if (scrollRef.current) {
+            const scrollAmount = scrollRef.current.clientWidth * 0.8;
+            scrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+            // Check scroll after animation
+            setTimeout(checkScroll, 500);
+        }
+    };
+
+    return (
+        <div className="products-scroll-wrapper">
+            {showLeftArrow && (
+                <button className="scroll-arrow left" onClick={() => scroll('left')}>
+                    <FaChevronLeft />
+                </button>
+            )}
+
+            <div
+                className="scroll-grid"
+                ref={scrollRef}
+                onScroll={checkScroll}
+            >
+                {products.map(p => (
+                    <div key={p.id} className="modern-product-card" style={{
+                        opacity: p.is_out_of_stock ? 0.7 : 1,
+                        filter: p.is_out_of_stock ? 'grayscale(0.5)' : 'none',
+                        position: 'relative'
+                    }}>
+                        {!!p.is_out_of_stock && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: '#dc2626',
+                                color: 'white',
+                                padding: '5px 12px',
+                                borderRadius: '20px',
+                                fontWeight: 'bold',
+                                fontSize: '0.7rem',
+                                zIndex: 2,
+                                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
+                            }}>
+                                Out of Stock
+                            </div>
+                        )}
+                        <div className="modern-product-image-container">
+                            {p.image ? (
+                                <img src={getImageUrl(p.image)} alt={p.name} />
+                            ) : (
+                                <div className="placeholder-product-img">
+                                    <FaStore />
+                                </div>
+                            )}
+                        </div>
+                        <div className="modern-product-content">
+                            <div>
+                                <h3 className="modern-product-name">{p.name}</h3>
+                                <p className="modern-product-desc">{p.description}</p>
+                            </div>
+                            <div className="modern-product-footer">
+                                <span className="modern-product-price">${parseFloat(p.price).toFixed(2)}</span>
+                                {user?.role !== 'super_admin' && (
+                                    <button
+                                        className={`btn ${(!storeInfo?.is_open || p.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
+                                        onClick={() => storeInfo?.is_open && !p.is_out_of_stock && addToCart(p.id)}
+                                        style={{
+                                            padding: '8px 15px',
+                                            fontSize: '0.85rem',
+                                            borderRadius: '15px',
+                                            cursor: (!storeInfo?.is_open || p.is_out_of_stock) ? 'not-allowed' : 'pointer'
+                                        }}
+                                        disabled={!storeInfo?.is_open || p.is_out_of_stock}
+                                    >
+                                        {!storeInfo?.is_open ? 'Closed' : p.is_out_of_stock ? 'Sold Out' : 'Add'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {showRightArrow && (
+                <button className="scroll-arrow right" onClick={() => scroll('right')}>
+                    <FaChevronRight />
+                </button>
+            )}
+        </div>
+    );
+};
+
 const StoreDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showAlert, showConfirm } = useUI();
-
-    const getImageUrl = (path) => {
-        if (!path) return '';
-        if (path.startsWith('http://') || path.startsWith('https://')) return path;
-        const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
-    };
 
     const [products, setProducts] = useState([]);
     const [reviews, setReviews] = useState([]);
@@ -35,6 +159,14 @@ const StoreDetails = () => {
     const [productSections, setProductSections] = useState([]);
     const [showNavbar, setShowNavbar] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
+    const [activeDropdown, setActiveDropdown] = useState(null);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reviewToDelete, setReviewToDelete] = useState(null);
     const [showAllReviews, setShowAllReviews] = useState(false);
@@ -106,6 +238,26 @@ const StoreDetails = () => {
     }, [fetchData]);
 
     useEffect(() => {
+        if (storeInfo?.primary_color) {
+            const root = document.documentElement;
+            const primary = storeInfo.primary_color;
+            const dark = adjustColor(primary, -30);
+            const light = adjustColor(primary, 30);
+
+            root.style.setProperty('--primary-color', primary);
+            root.style.setProperty('--primary-dark', dark);
+            root.style.setProperty('--primary-light', light);
+
+            return () => {
+                // Reset to site defaults on unmount
+                root.style.setProperty('--primary-color', '#10b981');
+                root.style.setProperty('--primary-dark', '#059669');
+                root.style.setProperty('--primary-light', '#6ee7b7');
+            };
+        }
+    }, [storeInfo]);
+
+    useEffect(() => {
         if (!hasIncremented.current) {
             axios.post(`/api/stores/${id}/visitors`)
                 .catch(err => console.error('Visitor count error:', err));
@@ -140,6 +292,22 @@ const StoreDetails = () => {
         setShowDeleteModal(true);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.nav-item-container')) {
+                setActiveDropdown(null);
+            }
+        };
+
+        if (activeDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [activeDropdown]);
+
     const confirmDelete = async () => {
         try {
             await axios.delete(`/api/reviews/${reviewToDelete}`);
@@ -162,8 +330,27 @@ const StoreDetails = () => {
     }, {});
 
     // Ordered sections based on manage product sections
+    // Ordered sections based on manage product sections
     const orderedSectionNames = productSections.map(s => s.name);
-    const availableSections = Object.keys(groupedProducts).sort((a, b) => {
+
+    // Filter sections to only show those that are in navItems or are children of something in navItems
+    const navItemSectionSlugs = navItems.map(ni => ni.section_id);
+    const visibleSectionIds = productSections.filter(s => {
+        const slug = s.name.toLowerCase().replace(/\s+/g, '-');
+        // Is it explicitly in nav?
+        if (navItemSectionSlugs.includes(slug)) return true;
+        // Is its parent in nav?
+        if (s.parent_id) {
+            const parent = productSections.find(ps => ps.id === s.parent_id);
+            if (parent) {
+                const parentSlug = parent.name.toLowerCase().replace(/\s+/g, '-');
+                if (navItemSectionSlugs.includes(parentSlug)) return true;
+            }
+        }
+        return false;
+    }).map(s => s.name);
+
+    const availableSections = Object.keys(groupedProducts).filter(s => visibleSectionIds.includes(s) || s === 'General').sort((a, b) => {
         const indexA = orderedSectionNames.indexOf(a);
         const indexB = orderedSectionNames.indexOf(b);
 
@@ -270,7 +457,16 @@ const StoreDetails = () => {
                     </div>
                 </div>
             )}
-            <div className="store-details-container" style={{ padding: '20px 5%' }}>
+            <div className="store-details-container" style={{
+                padding: '20px 5%',
+                minHeight: '100vh',
+                transition: 'all 0.3s ease',
+                backgroundColor: storeInfo?.background_color || '#ffffff',
+                '--primary-color': storeInfo?.primary_color || '#10b981',
+                '--primary-dark': adjustColor(storeInfo?.primary_color || '#10b981', -30),
+                '--primary-light': adjustColor(storeInfo?.primary_color || '#10b981', 30),
+                '--secondary-color': storeInfo?.secondary_color || '#d1fae5',
+            }}>
                 {/* Floating Cart Icon */}
                 {user && user.role !== 'super_admin' && !isCartOpen && (
                     <button
@@ -474,55 +670,153 @@ const StoreDetails = () => {
                     </div>
                 )}
 
-                {/* Custom Store Navbar */}
+                {/* Mega Menu Navbar (Filtered by Store Navigation) */}
                 {navItems.length > 0 && (
-                    <div className="store-custom-navbar" style={{
-                        background: 'white',
-                        padding: '0 20px',
-                        borderRadius: '30px',
-                        display: 'flex',
-                        gap: '20px',
-                        marginBottom: '30px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                        position: 'sticky',
-                        top: '20px',
-                        zIndex: 100,
-                        width: 'fit-content',
-                        margin: '0 auto 30px',
-                        transform: showNavbar ? 'translateY(0)' : 'translateY(-100px)',
-                        opacity: showNavbar ? 1 : 0,
-                        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease',
-                        pointerEvents: showNavbar ? 'auto' : 'none'
-                    }}>
-                        {navItems.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => {
-                                    const element = document.getElementById(item.section_id);
-                                    if (element) {
-                                        element.scrollIntoView({ behavior: 'smooth' });
-                                    }
-                                }}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    padding: '15px 10px',
-                                    color: 'var(--primary-dark)',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    fontSize: '0.9rem',
-                                    borderBottom: '3px solid transparent',
-                                    transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderBottom = '3px solid var(--primary-light)'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderBottom = '3px solid transparent'}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                    </div>
-                )
-                }
+                    <>
+                        <div className="store-custom-navbar" style={{
+                            background: 'white',
+                            padding: '0 30px',
+                            borderRadius: '30px',
+                            display: 'flex',
+                            gap: '5px',
+                            marginBottom: '30px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                            position: 'sticky',
+                            top: '20px',
+                            zIndex: 1000,
+                            width: 'fit-content',
+                            margin: '0 auto 30px',
+                            transform: showNavbar ? 'translateY(0)' : 'translateY(-100px)',
+                            opacity: showNavbar ? 1 : 0,
+                            transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                            pointerEvents: showNavbar ? 'auto' : 'none',
+                            alignItems: 'center',
+                            border: '1px solid rgba(0,0,0,0.02)'
+                        }}>
+                            {
+                                navItems.map(item => {
+                                    // Try to find if this nav item is one of our product sections
+                                    const section = productSections.find(s =>
+                                        s.name.toLowerCase().replace(/\s+/g, '-') === item.section_id
+                                    );
+
+                                    // Get children only if it's a section
+                                    const children = section ? productSections.filter(c => c.parent_id === section.id) : [];
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className={`nav-item-container ${activeDropdown === item.id ? 'active' : ''}`}
+                                            style={{ position: 'relative' }}
+                                        >
+                                            <button
+                                                onClick={(e) => {
+                                                    if (children.length > 0) {
+                                                        e.preventDefault();
+                                                        setActiveDropdown(activeDropdown === item.id ? null : item.id);
+                                                    } else {
+                                                        const element = document.getElementById(item.section_id);
+                                                        if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                                        setActiveDropdown(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    padding: '16px 20px',
+                                                    color: activeDropdown === item.id ? 'var(--primary-color)' : 'var(--primary-dark)',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    borderBottom: '3px solid transparent',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                className="nav-main-btn"
+                                            >
+                                                {item.label}
+                                                {children.length > 0 && (
+                                                    <span style={{
+                                                        fontSize: '0.6em',
+                                                        opacity: 0.5,
+                                                        transform: activeDropdown === item.id ? 'rotate(180deg)' : 'none',
+                                                        transition: 'transform 0.2s'
+                                                    }}>▼</span>
+                                                )}
+                                            </button>
+
+                                            {/* Dropdown for Children */}
+                                            {children.length > 0 && (
+                                                <div className="nav-dropdown" style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: '50%',
+                                                    transform: activeDropdown === item.id ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(10px)',
+                                                    minWidth: '200px',
+                                                    background: 'white',
+                                                    borderRadius: '16px',
+                                                    boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
+                                                    padding: '8px',
+                                                    opacity: activeDropdown === item.id ? 1 : 0,
+                                                    visibility: activeDropdown === item.id ? 'visible' : 'hidden',
+                                                    transition: 'all 0.2s ease',
+                                                    border: '1px solid rgba(0,0,0,0.04)',
+                                                    zIndex: 1001
+                                                }}>
+                                                    {children.map(child => (
+                                                        <div
+                                                            key={child.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const element = document.getElementById(child.name.toLowerCase().replace(/\s+/g, '-'));
+                                                                if (element) {
+                                                                    element.scrollIntoView({ behavior: 'smooth' });
+                                                                }
+                                                                setActiveDropdown(null);
+                                                            }}
+                                                            style={{
+                                                                padding: '10px 15px',
+                                                                cursor: 'pointer',
+                                                                color: '#4b5563',
+                                                                fontSize: '0.9rem',
+                                                                fontWeight: '500',
+                                                                borderRadius: '10px',
+                                                                transition: 'all 0.1s',
+                                                                textAlign: 'center'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.target.style.background = 'var(--secondary-color)';
+                                                                e.target.style.color = 'var(--primary-dark)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.target.style.background = 'transparent';
+                                                                e.target.style.color = '#4b5563';
+                                                            }}
+                                                        >
+                                                            {child.name}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            }
+                        </div>
+                        <style>{`
+                            .nav-item-container:hover .nav-dropdown {
+                                opacity: 1 !important;
+                                visibility: visible !important;
+                                transform: translateX(-50%) translateY(0) !important;
+                            }
+                            .nav-item-container:hover .nav-main-btn {
+                                color: var(--primary-color) !important;
+                            }
+                        `}</style>
+                    </>
+                )}
 
 
 
@@ -549,66 +843,76 @@ const StoreDetails = () => {
                             <h2 id={section.toLowerCase().replace(/\s+/g, '-')} style={{ color: 'var(--primary-dark)', borderBottom: '2px solid var(--secondary-color)', paddingBottom: '10px', marginBottom: '20px' }}>
                                 {section}
                             </h2>
-                            <div className="grid">
-                                {groupedProducts[section].map(p => (
-                                    <div key={p.id} className="modern-product-card" style={{
-                                        opacity: p.is_out_of_stock ? 0.7 : 1,
-                                        filter: p.is_out_of_stock ? 'grayscale(0.5)' : 'none',
-                                        position: 'relative'
-                                    }}>
-                                        {!!p.is_out_of_stock && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '10px',
-                                                right: '10px',
-                                                background: '#dc2626',
-                                                color: 'white',
-                                                padding: '5px 12px',
-                                                borderRadius: '20px',
-                                                fontWeight: 'bold',
-                                                fontSize: '0.7rem',
-                                                zIndex: 2,
-                                                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
-                                            }}>
-                                                Out of Stock
-                                            </div>
-                                        )}
-                                        <div className="modern-product-image-container">
-                                            {p.image ? (
-                                                <img src={getImageUrl(p.image)} alt={p.name} />
-                                            ) : (
-                                                <div className="placeholder-product-img">
-                                                    <FaStore />
+                            {groupedProducts[section].length > (windowWidth <= 768 ? 2 : 5) ? (
+                                <ProductScrollSection
+                                    products={groupedProducts[section]}
+                                    addToCart={addToCart}
+                                    getImageUrl={getImageUrl}
+                                    user={user}
+                                    storeInfo={storeInfo}
+                                />
+                            ) : (
+                                <div className="grid">
+                                    {groupedProducts[section].map(p => (
+                                        <div key={p.id} className="modern-product-card" style={{
+                                            opacity: p.is_out_of_stock ? 0.7 : 1,
+                                            filter: p.is_out_of_stock ? 'grayscale(0.5)' : 'none',
+                                            position: 'relative'
+                                        }}>
+                                            {!!p.is_out_of_stock && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '10px',
+                                                    right: '10px',
+                                                    background: '#dc2626',
+                                                    color: 'white',
+                                                    padding: '5px 12px',
+                                                    borderRadius: '20px',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.7rem',
+                                                    zIndex: 2,
+                                                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
+                                                }}>
+                                                    Out of Stock
                                                 </div>
                                             )}
-                                        </div>
-                                        <div className="modern-product-content">
-                                            <div>
-                                                <h3 className="modern-product-name">{p.name}</h3>
-                                                <p className="modern-product-desc">{p.description}</p>
-                                            </div>
-                                            <div className="modern-product-footer">
-                                                <span className="modern-product-price">${parseFloat(p.price).toFixed(2)}</span>
-                                                {user?.role !== 'super_admin' && (
-                                                    <button
-                                                        className={`btn ${(!storeInfo?.is_open || p.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
-                                                        onClick={() => storeInfo?.is_open && !p.is_out_of_stock && addToCart(p.id)}
-                                                        style={{
-                                                            padding: '8px 15px',
-                                                            fontSize: '0.85rem',
-                                                            borderRadius: '15px',
-                                                            cursor: (!storeInfo?.is_open || p.is_out_of_stock) ? 'not-allowed' : 'pointer'
-                                                        }}
-                                                        disabled={!storeInfo?.is_open || p.is_out_of_stock}
-                                                    >
-                                                        {!storeInfo?.is_open ? 'Closed' : p.is_out_of_stock ? 'Sold Out' : 'Add'}
-                                                    </button>
+                                            <div className="modern-product-image-container">
+                                                {p.image ? (
+                                                    <img src={getImageUrl(p.image)} alt={p.name} />
+                                                ) : (
+                                                    <div className="placeholder-product-img">
+                                                        <FaStore />
+                                                    </div>
                                                 )}
                                             </div>
+                                            <div className="modern-product-content">
+                                                <div>
+                                                    <h3 className="modern-product-name">{p.name}</h3>
+                                                    <p className="modern-product-desc">{p.description}</p>
+                                                </div>
+                                                <div className="modern-product-footer">
+                                                    <span className="modern-product-price">${parseFloat(p.price).toFixed(2)}</span>
+                                                    {user?.role !== 'super_admin' && (
+                                                        <button
+                                                            className={`btn ${(!storeInfo?.is_open || p.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
+                                                            onClick={() => storeInfo?.is_open && !p.is_out_of_stock && addToCart(p.id)}
+                                                            style={{
+                                                                padding: '8px 15px',
+                                                                fontSize: '0.85rem',
+                                                                borderRadius: '15px',
+                                                                cursor: (!storeInfo?.is_open || p.is_out_of_stock) ? 'not-allowed' : 'pointer'
+                                                            }}
+                                                            disabled={!storeInfo?.is_open || p.is_out_of_stock}
+                                                        >
+                                                            {!storeInfo?.is_open ? 'Closed' : p.is_out_of_stock ? 'Sold Out' : 'Add'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )) : <p>No products available yet.</p>
                 }

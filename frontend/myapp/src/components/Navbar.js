@@ -2,9 +2,16 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { HiOutlineHome, HiOutlineBuildingStorefront, HiOutlineHeart, HiOutlineClipboardDocumentList, HiOutlineEnvelope, HiOutlineShieldCheck, HiOutlineShoppingBag, HiOutlineArrowRightOnRectangle, HiOutlineArrowLeftOnRectangle, HiOutlineUserPlus } from 'react-icons/hi2';
+import { HiOutlineHome, HiOutlineBuildingStorefront, HiOutlineHeart, HiOutlineClipboardDocumentList, HiOutlineEnvelope, HiOutlineShieldCheck, HiOutlineShoppingBag, HiOutlineArrowRightOnRectangle, HiOutlineArrowLeftOnRectangle, HiOutlineUserPlus, HiOutlineUser } from 'react-icons/hi2';
 import { motion, AnimatePresence } from 'framer-motion';
 import whiteLogo from '../assets/WGatherLogo1.png';
+
+const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 const NavItem = React.memo(({ to, icon: Icon, label, currentPath }) => {
     const isActive = currentPath === to;
@@ -179,11 +186,30 @@ const Navbar = () => {
                         {user ? (
                             <>
                                 {user.role === 'user' && (
-                                    <button onClick={toggleCart} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s' }}>
+                                    <button onClick={toggleCart} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s', marginRight: '5px' }}>
                                         <HiOutlineShoppingBag size={26} />
                                         <span style={{ marginLeft: '5px', background: 'var(--secondary-color)', color: 'var(--primary-dark)', borderRadius: '50%', padding: '2px 8px', fontSize: '0.8rem', fontWeight: 'bold' }}>{cartItems.length}</span>
                                     </button>
                                 )}
+                                <Link to="/profile" style={{ display: 'flex', alignItems: 'center', transition: 'all 0.3s ease', marginRight: '10px' }}>
+                                    <div style={{
+                                        width: '35px',
+                                        height: '35px',
+                                        borderRadius: '50%',
+                                        overflow: 'hidden',
+                                        border: '2px solid rgba(255,255,255,0.3)',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {user.profile_pic ? (
+                                            <img src={getImageUrl(user.profile_pic)} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <HiOutlineUser size={20} color="white" />
+                                        )}
+                                    </div>
+                                </Link>
                                 <button onClick={handleLogout} className="auth-btn logout-btn" style={authBtnStyle}>
                                     <HiOutlineArrowLeftOnRectangle className="mobile-icon-only" size={24} />
                                     <span className="desktop-text-only">Logout</span>
@@ -212,40 +238,42 @@ const Navbar = () => {
                         )}
                     </div>
                 </div>
-            </motion.nav>
+            </motion.nav >
 
             {/* MOBILE BOTTOM NAV */}
-            {!isAuthPage && (
-                <motion.div
-                    className="mobile-bottom-nav"
-                >
-                    <NavItem to="/" icon={HiOutlineHome} label="Home" currentPath={location.pathname} />
-                    <NavItem to="/stores" icon={HiOutlineBuildingStorefront} label="Stores" currentPath={location.pathname} />
+            {
+                !isAuthPage && (
+                    <motion.div
+                        className="mobile-bottom-nav"
+                    >
+                        <NavItem to="/" icon={HiOutlineHome} label="Home" currentPath={location.pathname} />
+                        <NavItem to="/stores" icon={HiOutlineBuildingStorefront} label="Stores" currentPath={location.pathname} />
 
-                    {/* Favorites for both users and admins */}
-                    {user && (user.role === 'user' || user.role === 'admin') && (
-                        <NavItem to="/favorites" icon={HiOutlineHeart} label="Favs" currentPath={location.pathname} />
-                    )}
+                        {/* Favorites for both users and admins */}
+                        {user && (user.role === 'user' || user.role === 'admin') && (
+                            <NavItem to="/favorites" icon={HiOutlineHeart} label="Favorites" currentPath={location.pathname} />
+                        )}
 
-                    {/* User-specific items */}
-                    {user && user.role === 'user' && (
-                        <>
-                            <NavItem to="/orders" icon={HiOutlineClipboardDocumentList} label="Orders" currentPath={location.pathname} />
+                        {/* User-specific items */}
+                        {user && user.role === 'user' && (
+                            <>
+                                <NavItem to="/orders" icon={HiOutlineClipboardDocumentList} label="Orders" currentPath={location.pathname} />
+                                <NavItem to="/contact" icon={HiOutlineEnvelope} label="Contact" currentPath={location.pathname} />
+                            </>
+                        )}
+
+                        {/* Admin-specific items */}
+                        {user && user.role === 'admin' && (
+                            <NavItem to="/admin/dashboard" icon={HiOutlineShieldCheck} label="Dashboard" currentPath={location.pathname} />
+                        )}
+
+                        {/* Guest-specific items */}
+                        {!user && (
                             <NavItem to="/contact" icon={HiOutlineEnvelope} label="Contact" currentPath={location.pathname} />
-                        </>
-                    )}
-
-                    {/* Admin-specific items */}
-                    {user && user.role === 'admin' && (
-                        <NavItem to="/admin/dashboard" icon={HiOutlineShieldCheck} label="Dashboard" currentPath={location.pathname} />
-                    )}
-
-                    {/* Guest-specific items */}
-                    {!user && (
-                        <NavItem to="/contact" icon={HiOutlineEnvelope} label="Contact" currentPath={location.pathname} />
-                    )}
-                </motion.div>
-            )}
+                        )}
+                    </motion.div>
+                )
+            }
 
             <style>{`
                 .main-navbar {

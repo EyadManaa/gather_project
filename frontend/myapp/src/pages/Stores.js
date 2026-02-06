@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { FaHeart, FaRegHeart, FaSearch, FaArrowRight, FaStar } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaSearch, FaArrowRight, FaStar, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useUI } from '../context/UIContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -11,6 +11,161 @@ const getImageUrl = (path) => {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
+const StoreScrollSection = ({ stores, toggleFavorite, handleStoreClick, favorites, user }) => {
+    const scrollRef = useRef(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
+
+    const checkScroll = useCallback(() => {
+        if (scrollRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+            setShowLeftArrow(scrollLeft > 10);
+            setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 15);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Initial check and after stores change
+        checkScroll();
+        // Give time for images/layout
+        const timer = setTimeout(checkScroll, 500);
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            window.removeEventListener('resize', checkScroll);
+            clearTimeout(timer);
+        };
+    }, [checkScroll, stores]);
+
+    const scroll = (direction) => {
+        if (scrollRef.current) {
+            const scrollAmount = scrollRef.current.clientWidth * 0.8;
+            scrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+            setTimeout(checkScroll, 500);
+        }
+    };
+
+    return (
+        <div className="products-scroll-wrapper" style={{ position: 'relative' }}>
+            {showLeftArrow && (
+                <button className="scroll-arrow left" onClick={() => scroll('left')} style={{ zIndex: 10 }}>
+                    <FaChevronLeft />
+                </button>
+            )}
+
+            <div
+                className="scroll-grid"
+                ref={scrollRef}
+                onScroll={checkScroll}
+            >
+                {stores.map(store => (
+                    <div
+                        key={store.id}
+                        className="modern-store-card"
+                        onClick={(e) => handleStoreClick(e, store.id)}
+                    >
+                        <div className="modern-store-banner">
+                            {!store.is_open && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    left: '0',
+                                    right: '0',
+                                    bottom: '0',
+                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 4
+                                }}>
+                                    <span style={{
+                                        background: '#dc2626',
+                                        color: 'white',
+                                        padding: '5px 15px',
+                                        borderRadius: '20px',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.9rem'
+                                    }}>
+                                        CLOSED
+                                    </span>
+                                </div>
+                            )}
+
+                            {user && user.role !== 'super_admin' && (
+                                <div
+                                    className="modern-store-fav"
+                                    onClick={(e) => toggleFavorite(e, store.id)}
+                                >
+                                    {favorites.includes(store.id) ? (
+                                        <FaHeart style={{ color: '#ef4444', fontSize: '1.3rem' }} />
+                                    ) : (
+                                        <FaRegHeart style={{ color: '#666', fontSize: '1.3rem' }} />
+                                    )}
+                                </div>
+                            )}
+
+                            {store.banner ? (
+                                <img src={getImageUrl(store.banner)} alt={store.name} />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>No Banner</div>
+                            )}
+
+                            <div className="modern-store-overlay"></div>
+
+                            <div className="modern-store-info">
+                                <h3 className="modern-store-name">{store.name}</h3>
+                                {store.description && <p className="modern-store-tagline">{store.description}</p>}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
+                                    <div style={{ display: 'flex', color: '#fbbf24' }}>
+                                        {[1, 2, 3, 4, 5].map(star => (
+                                            <FaStar
+                                                key={star}
+                                                size={14}
+                                                style={{
+                                                    opacity: star <= Math.round(store.average_rating) ? 1 : 0.3
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'bold' }}>
+                                        {store.review_count > 0 ? (
+                                            <>({parseFloat(store.average_rating).toFixed(1)}) <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>• {store.review_count} reviews</span></>
+                                        ) : (
+                                            <span style={{ fontSize: '0.7rem', fontStyle: 'italic', opacity: 0.8 }}>New Store</span>
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modern-store-footer">
+                            <div className="modern-store-visit-group">
+                                {store.profile_pic ? (
+                                    <img src={getImageUrl(store.profile_pic)} alt={store.name} className="modern-store-profile" />
+                                ) : (
+                                    <div className="modern-store-profile" style={{ background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>{store.name.charAt(0)}</div>
+                                )}
+                                <span className="modern-store-visit-text">Visit Store</span>
+                            </div>
+                            <div className="modern-store-arrow-btn">
+                                <FaArrowRight />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {showRightArrow && (
+                <button className="scroll-arrow right" onClick={() => scroll('right')} style={{ zIndex: 10 }}>
+                    <FaChevronRight />
+                </button>
+            )}
+        </div>
+    );
 };
 
 const Stores = () => {
@@ -24,6 +179,7 @@ const Stores = () => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const { showAlert } = useUI();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     useEffect(() => {
         const fetchStores = async () => {
@@ -50,7 +206,9 @@ const Stores = () => {
 
         fetchStores();
         fetchFavorites();
+    }, [user]);
 
+    useEffect(() => {
         const controlNavbar = () => {
             if (typeof window !== 'undefined') {
                 if (window.scrollY > lastScrollY && window.scrollY > 300) { // Scrolling down
@@ -63,10 +221,14 @@ const Stores = () => {
         };
 
         window.addEventListener('scroll', controlNavbar);
-        return () => {
-            window.removeEventListener('scroll', controlNavbar);
-        };
-    }, [user, lastScrollY]);
+        return () => window.removeEventListener('scroll', controlNavbar);
+    }, [lastScrollY]);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleStoreClick = async (e, storeId) => {
         e.preventDefault();
@@ -101,17 +263,20 @@ const Stores = () => {
         }
     };
 
-    const filteredStores = stores.filter(store =>
-        store.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredStores = useMemo(() => {
+        return stores.filter(store =>
+            store.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [stores, searchTerm]);
 
-    // Group stores by category
-    const groupedStores = filteredStores.reduce((acc, store) => {
-        const cat = store.category || 'General';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(store);
-        return acc;
-    }, {});
+    const groupedStores = useMemo(() => {
+        return filteredStores.reduce((acc, store) => {
+            const cat = store.category || 'General';
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(store);
+            return acc;
+        }, {});
+    }, [filteredStores]);
 
     if (loading) return (
         <div style={{
@@ -128,7 +293,6 @@ const Stores = () => {
     return (
         <div style={{ paddingBottom: '60px', paddingTop: '80px', paddingLeft: '5%', paddingRight: '5%' }}>
             <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-                {/* Search Bar */}
                 <div style={{
                     maxWidth: '500px',
                     margin: '0 auto',
@@ -153,14 +317,13 @@ const Stores = () => {
                         position: 'absolute',
                         left: '15px',
                         top: '50%',
-                        transform: 'translateY(-60%)', // Adjusted slightly up for inputs having bottom margin
+                        transform: 'translateY(-60%)',
                         color: '#999'
                     }} />
                 </div>
                 <p style={{ fontSize: '1.2rem', color: '#64748b', marginTop: '15px', fontWeight: '500', textAlign: 'center' }}>Find your next favorite shop.</p>
             </div>
 
-            {/* Category Navigation Pills */}
             {Object.keys(groupedStores).length > 1 && (
                 <div style={{
                     position: 'sticky',
@@ -251,108 +414,114 @@ const Stores = () => {
                                 {groupedStores[category].length} {groupedStores[category].length === 1 ? 'Store' : 'Stores'}
                             </span>
                         </div>
-                        <div className="grid">
-                            {groupedStores[category].map(store => (
-                                <div
-                                    key={store.id}
-                                    className="modern-store-card"
-                                    onClick={(e) => handleStoreClick(e, store.id)}
-                                >
-                                    <div className="modern-store-banner">
-                                        {/* Closed Overlay */}
-                                        {!store.is_open && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '0',
-                                                left: '0',
-                                                right: '0',
-                                                bottom: '0',
-                                                backgroundColor: 'rgba(0,0,0,0.5)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                zIndex: 4
-                                            }}>
-                                                <span style={{
-                                                    background: '#dc2626',
-                                                    color: 'white',
-                                                    padding: '5px 15px',
-                                                    borderRadius: '20px',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '0.9rem'
+
+                        {groupedStores[category].length > (windowWidth <= 768 ? 2 : 4) ? (
+                            <StoreScrollSection
+                                stores={groupedStores[category]}
+                                toggleFavorite={toggleFavorite}
+                                handleStoreClick={handleStoreClick}
+                                favorites={favorites}
+                                user={user}
+                            />
+                        ) : (
+                            <div className="grid">
+                                {groupedStores[category].map(store => (
+                                    <div
+                                        key={store.id}
+                                        className="modern-store-card"
+                                        onClick={(e) => handleStoreClick(e, store.id)}
+                                    >
+                                        <div className="modern-store-banner">
+                                            {!store.is_open && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '0',
+                                                    left: '0',
+                                                    right: '0',
+                                                    bottom: '0',
+                                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    zIndex: 4
                                                 }}>
-                                                    CLOSED
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {/* Favorite Icon */}
-                                        {user && user.role !== 'super_admin' && (
-                                            <div
-                                                className="modern-store-fav"
-                                                onClick={(e) => toggleFavorite(e, store.id)}
-                                            >
-                                                {favorites.includes(store.id) ? (
-                                                    <FaHeart style={{ color: '#ef4444', fontSize: '1.3rem' }} />
-                                                ) : (
-                                                    <FaRegHeart style={{ color: '#666', fontSize: '1.3rem' }} />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {store.banner ? (
-                                            <img src={getImageUrl(store.banner)} alt={store.name} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>No Banner</div>
-                                        )}
-
-                                        {/* Gradient Overlay */}
-                                        <div className="modern-store-overlay"></div>
-
-                                        {/* Store Info Overlay */}
-                                        <div className="modern-store-info">
-                                            <h3 className="modern-store-name">{store.name}</h3>
-                                            {store.description && <p className="modern-store-tagline">{store.description}</p>}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
-                                                <div style={{ display: 'flex', color: '#fbbf24' }}>
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <FaStar
-                                                            key={star}
-                                                            size={14}
-                                                            style={{
-                                                                opacity: star <= Math.round(store.average_rating) ? 1 : 0.3
-                                                            }}
-                                                        />
-                                                    ))}
+                                                    <span style={{
+                                                        background: '#dc2626',
+                                                        color: 'white',
+                                                        padding: '5px 15px',
+                                                        borderRadius: '20px',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.9rem'
+                                                    }}>
+                                                        CLOSED
+                                                    </span>
                                                 </div>
-                                                <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'bold' }}>
-                                                    {store.review_count > 0 ? (
-                                                        <>({parseFloat(store.average_rating).toFixed(1)}) <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>• {store.review_count} reviews</span></>
+                                            )}
+
+                                            {user && user.role !== 'super_admin' && (
+                                                <div
+                                                    className="modern-store-fav"
+                                                    onClick={(e) => toggleFavorite(e, store.id)}
+                                                >
+                                                    {favorites.includes(store.id) ? (
+                                                        <FaHeart style={{ color: '#ef4444', fontSize: '1.3rem' }} />
                                                     ) : (
-                                                        <span style={{ fontSize: '0.7rem', fontStyle: 'italic', opacity: 0.8 }}>New Store</span>
+                                                        <FaRegHeart style={{ color: '#666', fontSize: '1.3rem' }} />
                                                     )}
-                                                </span>
+                                                </div>
+                                            )}
+
+                                            {store.banner ? (
+                                                <img src={getImageUrl(store.banner)} alt={store.name} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>No Banner</div>
+                                            )}
+
+                                            <div className="modern-store-overlay"></div>
+
+                                            <div className="modern-store-info">
+                                                <h3 className="modern-store-name">{store.name}</h3>
+                                                {store.description && <p className="modern-store-tagline">{store.description}</p>}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
+                                                    <div style={{ display: 'flex', color: '#fbbf24' }}>
+                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                            <FaStar
+                                                                key={star}
+                                                                size={14}
+                                                                style={{
+                                                                    opacity: star <= Math.round(store.average_rating) ? 1 : 0.3
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'bold' }}>
+                                                        {store.review_count > 0 ? (
+                                                            <>({parseFloat(store.average_rating).toFixed(1)}) <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>• {store.review_count} reviews</span></>
+                                                        ) : (
+                                                            <span style={{ fontSize: '0.7rem', fontStyle: 'italic', opacity: 0.8 }}>New Store</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="modern-store-footer">
+                                            <div className="modern-store-visit-group">
+                                                {store.profile_pic ? (
+                                                    <img src={getImageUrl(store.profile_pic)} alt={store.name} className="modern-store-profile" />
+                                                ) : (
+                                                    <div className="modern-store-profile" style={{ background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>{store.name.charAt(0)}</div>
+                                                )}
+                                                <span className="modern-store-visit-text">Visit Store</span>
+                                            </div>
+                                            <div className="modern-store-arrow-btn">
+                                                <FaArrowRight />
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Footer */}
-                                    <div className="modern-store-footer">
-                                        <div className="modern-store-visit-group">
-                                            {store.profile_pic ? (
-                                                <img src={getImageUrl(store.profile_pic)} alt={store.name} className="modern-store-profile" />
-                                            ) : (
-                                                <div className="modern-store-profile" style={{ background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '0.8rem' }}>{store.name.charAt(0)}</div>
-                                            )}
-                                            <span className="modern-store-visit-text">Visit Store</span>
-                                        </div>
-                                        <div className="modern-store-arrow-btn">
-                                            <FaArrowRight />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ))
             ) : (
@@ -363,7 +532,6 @@ const Stores = () => {
                 </div>
             )}
 
-            {/* Custom Ban Modal */}
             {showBanModal && (
                 <div style={{
                     position: 'fixed',
@@ -391,7 +559,6 @@ const Stores = () => {
                         transform: 'translateY(0)',
                         animation: 'slideUp 0.3s ease'
                     }}>
-                        {/* Red Close Button */}
                         <button
                             onClick={() => setShowBanModal(false)}
                             style={{
@@ -444,12 +611,12 @@ const Stores = () => {
                             Understood
                         </button>
                     </div>
-                    <style>{`
-                        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                    `}</style>
                 </div>
             )}
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            `}</style>
         </div>
     );
 };

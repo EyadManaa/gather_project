@@ -39,14 +39,21 @@ exports.checkout = async (req, res) => {
             // Increment store order count
             await db.execute('UPDATE stores SET order_count = order_count + 1 WHERE id = $1', [storeId]);
 
-            await db.execute(
-                'INSERT INTO orders (user_id, store_id, total_amount, delivery_option, phone_number, order_notes, location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            const { rows: newOrders } = await db.execute(
+                'INSERT INTO orders (user_id, store_id, total_amount, delivery_option, phone_number, order_notes, location, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
                 [req.user.id, storeId, storeTotal + (deliveryOption === 'delivery' ? 5 : 0), deliveryOption, phoneNumber, orderNotes, location, 'pending']
             );
 
-            // Increment product sales counts
+            const orderId = newOrders[0].id;
+
+            // Increment product sales counts and save order items
             for (const item of storeItems) {
                 await db.execute('UPDATE products SET sales_count = sales_count + $1 WHERE id = $2', [item.quantity, item.product_id]);
+
+                await db.execute(
+                    'INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase) VALUES ($1, $2, $3, $4)',
+                    [orderId, item.product_id, item.quantity, item.price]
+                );
             }
         }
 
@@ -145,6 +152,25 @@ exports.deleteOrder = async (req, res) => {
         res.json({ message: 'Order deleted successfully' });
     } catch (err) {
         res.status(500).json({ message: 'Error deleting order' });
+    }
+};
+
+exports.getPurchasedProducts = async (req, res) => {
+    try {
+        const { rows: products } = await db.execute(
+            `SELECT DISTINCT p.*, s.name as store_name 
+             FROM order_items oi
+             JOIN orders o ON oi.order_id = o.id
+             JOIN products p ON oi.product_id = p.id
+             JOIN stores s ON p.store_id = s.id
+             WHERE o.user_id = $1
+             ORDER BY p.name ASC`,
+            [req.user.id]
+        );
+        res.json(products);
+    } catch (err) {
+        console.error('Get Purchased Products Error:', err);
+        res.status(500).json({ message: 'Error fetching purchased products' });
     }
 };
 

@@ -2,10 +2,11 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { FaHeart, FaRegHeart, FaArrowRight, FaStar, FaShoppingBag, FaStore } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaArrowRight, FaStar, FaShoppingBag, FaStore, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useUI } from '../context/UIContext';
 import { Tilt } from 'react-tilt';
+import { useRef } from 'react';
 
 const CustomerHome = () => {
     const [stores, setStores] = useState([]);
@@ -14,6 +15,12 @@ const CustomerHome = () => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const { showAlert } = useUI();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    // Scroll Logic for Featured Stores
+    const featuredScrollRef = useRef(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(true);
 
     const getImageUrl = (path) => {
         if (!path) return '';
@@ -51,7 +58,39 @@ const CustomerHome = () => {
         fetchStores();
         fetchFavorites();
         fetchTrending();
-    }, [user]);
+
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+
+        const checkScroll = () => {
+            if (featuredScrollRef.current) {
+                const { scrollLeft, scrollWidth, clientWidth } = featuredScrollRef.current;
+                setShowLeftArrow(scrollLeft > 10);
+                setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+            }
+        };
+
+        const currentRef = featuredScrollRef.current;
+        if (currentRef) {
+            currentRef.addEventListener('scroll', checkScroll);
+            checkScroll(); // Initial check
+        }
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (currentRef) currentRef.removeEventListener('scroll', checkScroll);
+        };
+    }, [user, stores]);
+
+    const scroll = (direction) => {
+        if (featuredScrollRef.current) {
+            const scrollAmount = 320;
+            featuredScrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     const toggleFavorite = async (e, storeId) => {
         e.stopPropagation();
@@ -267,98 +306,89 @@ const CustomerHome = () => {
                         <p style={{ fontSize: '1.2rem', color: '#666' }}>Handpicked selections just for you.</p>
                     </motion.div>
 
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        className="grid"
-                    >
-                        {stores.slice(0, 6).map(store => (
-                            <Tilt key={store.id} options={{ max: 15, scale: 1.02 }}>
-                                <motion.div
-                                    variants={itemVariants}
-                                    onClick={(e) => {
-                                        if (!user || !store.is_banned) navigate(`/store/${store.id}`);
-                                    }}
-                                    style={{
-                                        background: 'white',
-                                        borderRadius: '24px',
-                                        overflow: 'hidden',
-                                        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                                        cursor: 'pointer',
-                                        position: 'relative'
-                                    }}
-                                >
-                                    <div style={{ height: '220px', position: 'relative' }}>
-                                        {store.banner ? (
-                                            <img src={getImageUrl(store.banner)} alt={store.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', background: '#eee' }}></div>
-                                        )}
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: 0, left: 0, right: 0, bottom: 0,
-                                            background: 'linear-gradient(to bottom, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%)'
-                                        }}></div>
+                    <div style={{ position: 'relative' }}>
+                        {/* Scroll Arrows (Desktop Only or All) */}
+                        {showLeftArrow && (
+                            <button className="scroll-arrow left" onClick={() => scroll('left')}>
+                                <FaChevronLeft />
+                            </button>
+                        )}
+                        {showRightArrow && (
+                            <button className="scroll-arrow right" onClick={() => scroll('right')}>
+                                <FaChevronRight />
+                            </button>
+                        )}
 
-                                        {user && (
-                                            <motion.button
-                                                whileTap={{ scale: 0.8 }}
-                                                onClick={(e) => toggleFavorite(e, store.id)}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: '15px',
-                                                    right: '15px',
-                                                    background: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '50%',
-                                                    width: '40px',
-                                                    height: '40px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    cursor: 'pointer',
-                                                    boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
-                                                }}
-                                            >
-                                                {favorites.includes(store.id) ? (
-                                                    <FaHeart color="#ef4444" size={20} />
-                                                ) : (
-                                                    <FaRegHeart color="#666" size={20} />
-                                                )}
-                                            </motion.button>
-                                        )}
+                        <motion.div
+                            ref={featuredScrollRef}
+                            variants={containerVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true }}
+                            className={windowWidth <= 768 ? "scroll-grid" : "grid"}
+                        >
+                            {stores.slice(0, 6).map(store => (
+                                <Tilt key={store.id} options={{ max: 15, scale: 1.02 }}>
+                                    <motion.div
+                                        variants={itemVariants}
+                                        onClick={(e) => {
+                                            if (!user || !store.is_banned) navigate(`/store/${store.id}`);
+                                        }}
+                                        className="modern-store-card"
+                                    >
+                                        <div className="modern-store-banner">
+                                            {store.banner ? (
+                                                <img src={getImageUrl(store.banner)} alt={store.name} />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', background: '#eee' }}></div>
+                                            )}
+                                            <div className="modern-store-overlay"></div>
 
-                                        <div style={{ position: 'absolute', bottom: '20px', left: '20px', color: 'white' }}>
-                                            <h3 style={{ margin: 0, fontSize: '1.5rem', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{store.name}</h3>
-                                            <p style={{ margin: '5px 0 0 0', opacity: 0.9, fontSize: '0.9rem' }}>
-                                                {store.description?.substring(0, 50)}...
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #eee' }}>
-                                                {store.profile_pic ? (
-                                                    <img src={getImageUrl(store.profile_pic)} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', background: 'var(--primary-color)' }}></div>
-                                                )}
+                                            {user && (
+                                                <button
+                                                    className="modern-store-fav"
+                                                    onClick={(e) => toggleFavorite(e, store.id)}
+                                                >
+                                                    {favorites.includes(store.id) ? (
+                                                        <FaHeart color="#ef4444" size={20} />
+                                                    ) : (
+                                                        <FaRegHeart color="#666" size={20} />
+                                                    )}
+                                                </button>
+                                            )}
+
+                                            <div className="modern-store-info">
+                                                <h3 className="modern-store-name">{store.name}</h3>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                                                    <div style={{ display: 'flex', color: '#fbbf24' }}>
+                                                        <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '10px', backdropFilter: 'blur(4px)' }}>
+                                                        New Store
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'bold' }}>Visit Store</span>
                                         </div>
-                                        <div style={{
-                                            width: '35px', height: '35px', borderRadius: '50%', background: '#f0fdf4',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)'
-                                        }}>
-                                            <FaArrowRight />
+                                        <div className="modern-store-footer">
+                                            <div className="modern-store-visit-group">
+                                                <div style={{ width: '35px', height: '35px', borderRadius: '50%', overflow: 'hidden', border: '1px solid #eee' }}>
+                                                    {store.profile_pic ? (
+                                                        <img src={getImageUrl(store.profile_pic)} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        <div style={{ width: '100%', height: '100%', background: 'var(--primary-color)' }}></div>
+                                                    )}
+                                                </div>
+                                                <span className="modern-store-visit-text">Visit Store</span>
+                                            </div>
+                                            <div className="modern-store-arrow-btn" style={{ background: 'var(--primary-color)', color: 'white' }}>
+                                                <FaArrowRight />
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            </Tilt>
-                        ))}
-                    </motion.div>
+                                    </motion.div>
+                                </Tilt>
+                            ))}
+                        </motion.div>
+                    </div>
 
                     <div style={{ textAlign: 'center', marginTop: '50px' }}>
                         <motion.button
@@ -382,6 +412,7 @@ const CustomerHome = () => {
                 </div>
             </section>
 
+
             {/* TRENDING PRODUCTS FEED */}
             <section style={{ padding: '80px 0', background: '#f0fdf4' }}>
                 <div className="container">
@@ -400,36 +431,30 @@ const CustomerHome = () => {
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
-                        className="grid"
+                        className={windowWidth <= 768 ? "scroll-grid" : "grid"}
                     >
                         {trendingProducts.map(product => (
                             <Tilt key={product.id} options={{ max: 15, scale: 1.02 }}>
                                 <motion.div
                                     variants={itemVariants}
+                                    className="modern-product-card"
                                     onClick={() => navigate(`/store/${product.store_id}`)}
-                                    style={{
-                                        background: 'white',
-                                        borderRadius: '24px',
-                                        overflow: 'hidden',
-                                        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                                        cursor: 'pointer',
-                                        height: '100%'
-                                    }}
                                 >
-                                    <div style={{ height: '200px', background: '#f8f8f8' }}>
+                                    <div className="modern-product-image-container">
                                         {product.image ? (
-                                            <img src={getImageUrl(product.image)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={getImageUrl(product.image)} alt={product.name} />
                                         ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}><FaShoppingBag size={40} /></div>
+                                            <div className="placeholder-product-img"><FaShoppingBag size={40} /></div>
                                         )}
                                     </div>
-                                    <div style={{ padding: '20px' }}>
-                                        <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: 'var(--primary-dark)' }}>{product.name}</h3>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontWeight: '900', color: 'var(--primary-color)', fontSize: '1.1rem' }}>${parseFloat(product.price).toFixed(2)}</span>
+                                    <div className="modern-product-content">
+                                        <h3 className="modern-product-name">{product.name}</h3>
+                                        <div className="modern-product-footer">
+                                            <span className="modern-product-price">${parseFloat(product.price).toFixed(2)}</span>
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
-                                                style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: 'none', padding: '8px 12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.8rem' }}
+                                                className="btn btn-primary"
+                                                style={{ padding: '8px 15px', fontSize: '0.85rem', borderRadius: '15px' }}
                                             >
                                                 Buy Now
                                             </motion.button>
@@ -520,7 +545,7 @@ const CustomerHome = () => {
                     }
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 

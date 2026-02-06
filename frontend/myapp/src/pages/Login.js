@@ -1,19 +1,27 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Added FaEye, FaEyeSlash
 
 import FallingLeaves from '../components/FallingLeaves';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+    const [showPassword, setShowPassword] = useState(false); // New state for password visibility
     const { login, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const [error, setError] = useState('');
 
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const res = await login(email, password);
+        const res = await login(formData.email, formData.password);
         if (res.success) {
             // Retrieve the user from the response or storage to check the role
             const userData = JSON.parse(localStorage.getItem('user'));
@@ -47,11 +55,41 @@ const Login = () => {
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '15px' }}>
                         <label>Email</label>
-                        <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" required />
+                        <input type="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} name="email" className="form-control" required />
                     </div>
-                    <div style={{ marginBottom: '15px' }}>
-                        <label>Password</label>
-                        <input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-control" required />
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', color: '#333' }}>Password</label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showPassword ? "text" : "password"} // Dynamic type
+                                name="password"
+                                placeholder="••••••••"
+                                value={formData.password}
+                                onChange={handleChange}
+                                className="form-control"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '15px',
+                                    top: '35%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#666',
+                                    fontSize: '1.2rem',
+                                    padding: '0',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Login</button>
                 </form>

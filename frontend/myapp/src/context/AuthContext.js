@@ -146,8 +146,14 @@ export const AuthProvider = ({ children }) => {
         await supabase.auth.signOut();
     };
 
+    const updateUser = (updatedData) => {
+        const newUser = { ...user, ...updatedData };
+        setUser(newUser);
+        localStorage.setItem('user', JSON.stringify(newUser));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, impersonate, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, impersonate, updateUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

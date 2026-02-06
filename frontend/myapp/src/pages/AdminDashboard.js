@@ -29,7 +29,8 @@ const AdminDashboard = () => {
     }, [location.state]);
 
     const [productSections, setProductSections] = useState([]);
-    const [sectionForm, setSectionForm] = useState({ name: '' });
+    const [sectionForm, setSectionForm] = useState({ name: '', parent_id: '' });
+    const [builderSelectedParentId, setBuilderSelectedParentId] = useState('');
 
     const [createForm, setCreateForm] = useState({ name: '', description: '', profile_pic: null, banner: null, category: 'General' });
     const [productForm, setProductForm] = useState({ name: '', description: '', price: '', image: null, section: '' });
@@ -60,6 +61,9 @@ const AdminDashboard = () => {
     const [selectedUpgradeTier, setSelectedUpgradeTier] = useState(null);
     const [upgradeMessage, setUpgradeMessage] = useState('');
     const [upgradeRequests, setUpgradeRequests] = useState([]);
+    const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+    const [primaryColor, setPrimaryColor] = useState('#10b981'); // Default Emerald
+    const [secondaryColor, setSecondaryColor] = useState('#d1fae5'); // Default Emerald Light
     const profileInputRef = useRef(null);
     const bannerInputRef = useRef(null);
     const editFormRef = useRef(null);
@@ -128,6 +132,9 @@ const AdminDashboard = () => {
             setOpeningTime(res.data.opening_time || '');
             setClosingTime(res.data.closing_time || '');
             setCategory(res.data.category || 'General');
+            setBackgroundColor(res.data.background_color || '#ffffff');
+            setPrimaryColor(res.data.primary_color || '#10b981');
+            setSecondaryColor(res.data.secondary_color || '#d1fae5');
             if (res.data) {
                 fetchStats(res.data.id);
                 fetchOrders(res.data.id);
@@ -260,6 +267,21 @@ const AdminDashboard = () => {
         } catch (err) { showAlert('Error reordering sections', 'error'); }
     };
 
+    const handleAssignChild = async (childId, parentId) => {
+        try {
+            const section = productSections.find(s => s.id === childId);
+            await axios.put(`/api/sections/${childId}`, {
+                ...section,
+                parent_id: parentId || null
+            }, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            fetchProductSections(store.id);
+        } catch (err) {
+            showAlert('Error updating assignment', 'error');
+        }
+    };
+
 
     const fetchStats = async (storeId) => {
         try {
@@ -368,7 +390,10 @@ const AdminDashboard = () => {
                 linkedin_link: socialLinks.linkedin,
                 opening_time: openingTime,
                 closing_time: closingTime,
-                category: category
+                category: category,
+                background_color: backgroundColor,
+                primary_color: primaryColor,
+                secondary_color: secondaryColor
             });
             showAlert('Store settings updated successfully!', 'success');
             fetchMyStore();
@@ -485,6 +510,9 @@ const AdminDashboard = () => {
             </div>
         );
     }
+
+    // Add default background color handling for create store if needed, mostly handled by backend default.
+
 
     return (
         <div style={{ position: 'relative' }}>
@@ -727,6 +755,48 @@ const AdminDashboard = () => {
                                             <option value="Books">Books</option>
                                             <option value="Other">Other</option>
                                         </select>
+
+                                    </div>
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Store Theme</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', color: '#666', marginBottom: '5px', display: 'block' }}>Background</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <input
+                                                        type="color"
+                                                        value={backgroundColor}
+                                                        onChange={(e) => setBackgroundColor(e.target.value)}
+                                                        style={{ width: '50px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0, background: 'none' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{backgroundColor}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', color: '#666', marginBottom: '5px', display: 'block' }}>Primary Brand</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <input
+                                                        type="color"
+                                                        value={primaryColor}
+                                                        onChange={(e) => setPrimaryColor(e.target.value)}
+                                                        style={{ width: '50px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0, background: 'none' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{primaryColor}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.85rem', color: '#666', marginBottom: '5px', display: 'block' }}>Secondary/Accent</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <input
+                                                        type="color"
+                                                        value={secondaryColor}
+                                                        onChange={(e) => setSecondaryColor(e.target.value)}
+                                                        style={{ width: '50px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: 0, background: 'none' }}
+                                                    />
+                                                    <span style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}>{secondaryColor}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div style={{ marginTop: '25px', marginBottom: '20px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '12px', border: '1px solid #eee' }}>
@@ -1059,7 +1129,7 @@ const AdminDashboard = () => {
 
                                 {/* Product Sections Management integrated here */}
                                 {store && (
-                                    <div className="card" style={{ maxWidth: '1000px', marginBottom: '40px', backgroundColor: '#fdfdfd', border: '1px solid #e2e8f0' }}>
+                                    <div className="card" style={{ maxWidth: '1300px', marginBottom: '40px', backgroundColor: '#fdfdfd', border: '1px solid #e2e8f0' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                             <div>
                                                 <h3 style={{ margin: 0 }}>Manage Categories</h3>
@@ -1079,8 +1149,73 @@ const AdminDashboard = () => {
                                                 onChange={e => setSectionForm({ ...sectionForm, name: e.target.value })}
                                                 required
                                             />
-                                            <button type="submit" className="btn btn-primary" style={{ width: '140px', height: '45px', padding: 0, flexShrink: 0 }}>Add Section</button>
+                                            <button type="submit" className="btn btn-primary" style={{ width: '140px', height: '45px', padding: 0 }}>Add Section</button>
                                         </form>
+
+                                        {/* Mega Menu Builder */}
+                                        <div style={{ marginBottom: '30px', padding: '20px', background: '#eff6ff', borderRadius: '16px', border: '1px solid #dbeafe' }}>
+                                            <h4 style={{ color: '#1e40af', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ fontSize: '1.2rem' }}>📂</span> Mega Menu Builder
+                                            </h4>
+                                            <p style={{ fontSize: '0.85rem', color: '#1e3a8a', marginBottom: '20px' }}>
+                                                Pick a <strong>Main Category</strong> and select which items go inside it.
+                                            </p>
+
+                                            <div style={{ marginBottom: '15px' }}>
+                                                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 'bold', color: '#1e40af' }}>Select Main Category:</label>
+                                                <select
+                                                    className="form-control"
+                                                    style={{ maxWidth: '400px', borderRadius: '10px' }}
+                                                    value={builderSelectedParentId}
+                                                    onChange={e => setBuilderSelectedParentId(e.target.value)}
+                                                >
+                                                    <option value="">-- Choose a Parent --</option>
+                                                    {productSections.filter(s => !s.parent_id).map(s => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {builderSelectedParentId && (
+                                                <div style={{ background: 'white', padding: '15px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                                                    <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.9rem', fontWeight: 'bold' }}>Assign sections to "{productSections.find(s => s.id === parseInt(builderSelectedParentId))?.name}":</label>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                                                        {productSections
+                                                            .filter(s => s.id !== parseInt(builderSelectedParentId))
+                                                            .map(section => {
+                                                                const isChild = section.parent_id === parseInt(builderSelectedParentId);
+                                                                const hasOtherParent = section.parent_id && section.parent_id !== parseInt(builderSelectedParentId);
+
+                                                                return (
+                                                                    <div key={section.id} style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '10px',
+                                                                        padding: '8px 12px',
+                                                                        borderRadius: '8px',
+                                                                        background: isChild ? '#dcfce7' : '#f8fafc',
+                                                                        border: isChild ? '1px solid #86efac' : '1px solid #e2e8f0',
+                                                                        transition: 'all 0.2s'
+                                                                    }}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isChild}
+                                                                            disabled={hasOtherParent}
+                                                                            onChange={(e) => handleAssignChild(section.id, e.target.checked ? parseInt(builderSelectedParentId) : null)}
+                                                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                                        />
+                                                                        <span style={{ fontSize: '0.9rem', color: hasOtherParent ? '#94a3b8' : '#334155' }}>
+                                                                            {section.name}
+                                                                            {hasOtherParent && <span style={{ fontSize: '0.7rem', display: 'block' }}>(In: {productSections.find(p => p.id === section.parent_id)?.name})</span>}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        }
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                             <h4 style={{ marginBottom: '12px', fontSize: '0.95rem', color: '#475569' }}>Current Sections</h4>
@@ -1099,7 +1234,14 @@ const AdminDashboard = () => {
                                                         transition: 'all 0.3s ease',
                                                         gap: '15px'
                                                     }}>
-                                                        <div style={{ fontWeight: '600', color: 'var(--primary-dark)', fontSize: '0.95rem' }}>{item.name}</div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <div style={{ fontWeight: '600', color: 'var(--primary-dark)', fontSize: '0.95rem' }}>{item.name}</div>
+                                                            {item.parent_id && (
+                                                                <span style={{ fontSize: '0.75rem', background: '#f1f5f9', color: '#64748b', padding: '2px 6px', borderRadius: '4px', marginTop: '2px', display: 'inline-block', width: 'fit-content' }}>
+                                                                    Inside: {productSections.find(s => s.id === item.parent_id)?.name || 'Unknown'}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div style={{ display: 'flex', gap: '6px' }}>
                                                             <button
                                                                 onClick={() => handleMoveSection(index, 'up')}
@@ -1134,7 +1276,7 @@ const AdminDashboard = () => {
 
                                 {/* Edit Form */}
                                 {editingProduct ? (
-                                    <div ref={editFormRef} className="card" style={{ maxWidth: '1000px', marginBottom: '30px', border: '2px solid var(--primary-color)' }}>
+                                    <div ref={editFormRef} className="card" style={{ maxWidth: '1300px', marginBottom: '30px', border: '2px solid var(--primary-color)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                                             <h3>Edit Product: {editingProduct.name}</h3>
                                             <button onClick={() => setEditingProduct(null)} className="btn btn-secondary" style={{ padding: '5px 15px' }}>Cancel</button>
@@ -1171,7 +1313,7 @@ const AdminDashboard = () => {
                                         </form>
                                     </div>
                                 ) : (
-                                    <div className="card" style={{ maxWidth: '1000px', marginBottom: '30px' }}>
+                                    <div className="card" style={{ maxWidth: '1300px', marginBottom: '30px' }}>
                                         <h3>Add New Product</h3>
                                         <form onSubmit={handleAddProduct}>
                                             <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -1204,7 +1346,7 @@ const AdminDashboard = () => {
                                 )}
 
                                 {/* Products List */}
-                                <div className="card" style={{ maxWidth: '1000px' }}>
+                                <div className="card" style={{ maxWidth: '1300px' }}>
                                     <h3 style={{ marginBottom: '20px' }}>Your Products</h3>
                                     {products.length === 0 ? (
                                         <p style={{ color: '#999' }}>No products added yet.</p>

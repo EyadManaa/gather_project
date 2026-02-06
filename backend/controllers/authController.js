@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const { uploadToSupabase } = require('../utils/supabaseStorage');
 
 const generateToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -47,6 +48,7 @@ exports.register = async (req, res) => {
                 username: finalUsername,
                 email,
                 role: userRole,
+                profile_pic: null
             },
         });
     } catch (err) {
@@ -72,7 +74,7 @@ exports.login = async (req, res) => {
     }
 
     try {
-        const { rows: users } = await db.execute('SELECT * FROM users WHERE email = $1', [email]);
+        const { rows: users } = await db.execute('SELECT id, username, email, password, role, is_banned, profile_pic FROM users WHERE email = $1', [email]);
 
         if (users.length === 0) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -107,6 +109,7 @@ exports.login = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 role: user.role,
+                profile_pic: user.profile_pic
             },
         });
     } catch (err) {
@@ -116,7 +119,7 @@ exports.login = async (req, res) => {
 };
 exports.getMe = async (req, res) => {
     try {
-        const { rows: users } = await db.execute('SELECT id, username, email, role FROM users WHERE id = $1', [req.user.id]);
+        const { rows: users } = await db.execute('SELECT id, username, email, role, profile_pic FROM users WHERE id = $1', [req.user.id]);
 
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -124,6 +127,60 @@ exports.getMe = async (req, res) => {
 
         res.json({
             user: users[0]
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    const { username } = req.body;
+    let profilePicPath = null;
+
+    if (req.file) {
+        try {
+            profilePicPath = await uploadToSupabase(req.file, 'profiles');
+        } catch (err) {
+            return res.status(500).json({ message: 'Error uploading image' });
+        }
+    }
+
+    try {
+        let query = 'UPDATE users SET username = $1';
+        let params = [username];
+
+        if (profilePicPath) {
+            query += ', profile_pic = $2 WHERE id = $3';
+            params.push(profilePicPath, req.user.id);
+        } else {
+            query += ' WHERE id = $2';
+            params.push(req.user.id);
+        }
+
+        await db.execute(query, params);
+
+        const { rows: updatedUsers } = await db.execute('SELECT id, username, email, role, profile_pic FROM users WHERE id = $1', [req.user.id]);
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: updatedUsers[0]
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.deleteProfilePic = async (req, res) => {
+    try {
+        await db.execute('UPDATE users SET profile_pic = NULL WHERE id = $1', [req.user.id]);
+
+        const { rows: updatedUsers } = await db.execute('SELECT id, username, email, role, profile_pic FROM users WHERE id = $1', [req.user.id]);
+
+        res.json({
+            message: 'Profile picture deleted',
+            user: updatedUsers[0]
         });
     } catch (err) {
         console.error(err);

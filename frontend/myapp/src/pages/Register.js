@@ -1,11 +1,20 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Added icons
 
 import FallingLeaves from '../components/FallingLeaves';
 
 const Register = () => {
-    const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'user'
+    });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const { register } = useContext(AuthContext);
     const navigate = useNavigate();
     const [error, setError] = useState('');
@@ -14,11 +23,16 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Clear old errors
+        setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
         const res = await register(formData.username, formData.email, formData.password, formData.role);
         if (res.success) {
             if (res.message) {
-                // This means signup was successful but email needs confirmation
                 alert(res.message);
                 navigate('/login');
             } else {
@@ -48,7 +62,7 @@ const Register = () => {
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '15px' }}>
                         <label>Username</label>
-                        <input name="username" placeholder="Choose a username" onChange={handleChange} className="form-control" required />
+                        <input name="username" placeholder="Choose a username" value={formData.username} onChange={handleChange} className="form-control" required />
                     </div>
                     <div style={{ marginBottom: '15px' }}>
                         <label>Email</label>
@@ -56,7 +70,71 @@ const Register = () => {
                     </div>
                     <div style={{ marginBottom: '15px' }}>
                         <label>Password</label>
-                        <input name="password" type="password" placeholder="Create a password" onChange={handleChange} className="form-control" required />
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder="Create a password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                className="form-control"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '15px',
+                                    top: '35%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#666',
+                                    fontSize: '1.2rem',
+                                    padding: '0',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
+                    </div>
+                    <div style={{ marginBottom: '15px' }}>
+                        <label>Confirm Password</label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                name="confirmPassword"
+                                placeholder="Confirm your password"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                className="form-control"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '15px',
+                                    top: '35%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: '#666',
+                                    fontSize: '1.2rem',
+                                    padding: '0',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
                     </div>
                     <div style={{ marginBottom: '15px' }}>
                         <label>I want to be a:</label>

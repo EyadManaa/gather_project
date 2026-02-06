@@ -28,8 +28,8 @@ exports.addSection = async (req, res) => {
         const count = parseInt(countRows[0].count);
 
         const { rows: newSection } = await db.execute(
-            'INSERT INTO product_sections (store_id, name, order_index) VALUES ($1, $2, $3) RETURNING *',
-            [storeId, name, count]
+            'INSERT INTO product_sections (store_id, name, order_index, parent_id) VALUES ($1, $2, $3, $4) RETURNING *',
+            [storeId, name, count, req.body.parent_id || null]
         );
         res.status(201).json(newSection[0]);
 
@@ -61,7 +61,7 @@ exports.deleteSection = async (req, res) => {
 };
 
 exports.updateSection = async (req, res) => {
-    const { name, order_index } = req.body;
+    const { name, order_index, parent_id } = req.body;
     const sectionId = req.params.sectionId;
     try {
         const { rows: sections } = await db.execute(
@@ -77,8 +77,8 @@ exports.updateSection = async (req, res) => {
 
         const item = sections[0];
         const { rows: updatedSection } = await db.execute(
-            'UPDATE product_sections SET name = $1, order_index = $2 WHERE id = $3 RETURNING *',
-            [name || item.name, order_index !== undefined ? order_index : item.order_index, sectionId]
+            'UPDATE product_sections SET name = $1, order_index = $2, parent_id = $3 WHERE id = $4 RETURNING *',
+            [name || item.name, order_index !== undefined ? order_index : item.order_index, parent_id !== undefined ? parent_id : item.parent_id, sectionId]
         );
         res.json(updatedSection[0]);
     } catch (err) {

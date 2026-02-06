@@ -24,7 +24,7 @@ const checkStoreAutoStatus = (store) => {
 
 // Create a new store (Admin/Owner)
 exports.createStore = async (req, res) => {
-    const { name, description, profit_percentage, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category } = req.body;
+    const { name, description, profit_percentage, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category, background_color, primary_color, secondary_color } = req.body;
 
     try {
         // Handle files - upload to Supabase
@@ -32,8 +32,8 @@ exports.createStore = async (req, res) => {
         const banner = req.files && req.files['banner'] ? await uploadToSupabase(req.files['banner'][0], 'stores/banners') : null;
 
         const { rows } = await db.execute(
-            'INSERT INTO stores (owner_id, name, description, profile_pic, banner, profit_percentage, is_open, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id',
-            [req.user.id, name, description, profile_pic, banner, profit_percentage || 0, true, about_content || '', instagram_link || null, tiktok_link || null, facebook_link || null, linkedin_link || null, category || 'General']
+            'INSERT INTO stores (owner_id, name, description, profile_pic, banner, profit_percentage, is_open, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, category, background_color, primary_color, secondary_color) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id',
+            [req.user.id, name, description, profile_pic, banner, profit_percentage || 0, true, about_content || '', instagram_link || null, tiktok_link || null, facebook_link || null, linkedin_link || null, category || 'General', background_color || '#ffffff', primary_color || '#10b981', secondary_color || '#d1fae5']
         );
         res.status(201).json({ message: 'Store created successfully', storeId: rows[0].id });
     } catch (err) {
@@ -116,7 +116,7 @@ exports.getMyStore = async (req, res) => {
 
 // Update store
 exports.updateStore = async (req, res) => {
-    const { name, description, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, opening_time, closing_time, category } = req.body;
+    const { name, description, about_content, instagram_link, tiktok_link, facebook_link, linkedin_link, opening_time, closing_time, category, background_color, primary_color, secondary_color } = req.body;
     const storeId = req.params.id;
 
     try {
@@ -132,7 +132,7 @@ exports.updateStore = async (req, res) => {
         const is_open = req.body.is_open !== undefined ? (req.body.is_open === 'true' || req.body.is_open === true) : stores[0].is_open;
 
         await db.execute(
-            'UPDATE stores SET name = $1, description = $2, profile_pic = $3, banner = $4, is_open = $5, about_content = $6, instagram_link = $7, tiktok_link = $8, facebook_link = $9, linkedin_link = $10, opening_time = $11, closing_time = $12, category = $13 WHERE id = $14',
+            'UPDATE stores SET name = $1, description = $2, profile_pic = $3, banner = $4, is_open = $5, about_content = $6, instagram_link = $7, tiktok_link = $8, facebook_link = $9, linkedin_link = $10, opening_time = $11, closing_time = $12, category = $13, background_color = $14, primary_color = $15, secondary_color = $16 WHERE id = $17',
             [
                 name || stores[0].name,
                 description || stores[0].description,
@@ -147,6 +147,9 @@ exports.updateStore = async (req, res) => {
                 opening_time !== undefined ? (opening_time === '' ? null : opening_time) : stores[0].opening_time,
                 closing_time !== undefined ? (closing_time === '' ? null : closing_time) : stores[0].closing_time,
                 category !== undefined ? category : stores[0].category,
+                background_color !== undefined ? background_color : stores[0].background_color,
+                primary_color !== undefined ? primary_color : stores[0].primary_color,
+                secondary_color !== undefined ? secondary_color : stores[0].secondary_color,
                 storeId
             ]
         );
