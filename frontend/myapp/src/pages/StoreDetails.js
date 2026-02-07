@@ -330,27 +330,9 @@ const StoreDetails = () => {
     }, {});
 
     // Ordered sections based on manage product sections
-    // Ordered sections based on manage product sections
     const orderedSectionNames = productSections.map(s => s.name);
 
-    // Filter sections to only show those that are in navItems or are children of something in navItems
-    const navItemSectionSlugs = navItems.map(ni => ni.section_id);
-    const visibleSectionIds = productSections.filter(s => {
-        const slug = s.name.toLowerCase().replace(/\s+/g, '-');
-        // Is it explicitly in nav?
-        if (navItemSectionSlugs.includes(slug)) return true;
-        // Is its parent in nav?
-        if (s.parent_id) {
-            const parent = productSections.find(ps => ps.id === s.parent_id);
-            if (parent) {
-                const parentSlug = parent.name.toLowerCase().replace(/\s+/g, '-');
-                if (navItemSectionSlugs.includes(parentSlug)) return true;
-            }
-        }
-        return false;
-    }).map(s => s.name);
-
-    const availableSections = Object.keys(groupedProducts).filter(s => visibleSectionIds.includes(s) || s === 'General').sort((a, b) => {
+    const availableSections = Object.keys(groupedProducts).sort((a, b) => {
         const indexA = orderedSectionNames.indexOf(a);
         const indexB = orderedSectionNames.indexOf(b);
 
@@ -402,7 +384,15 @@ const StoreDetails = () => {
     }
 
     return (
-        <div style={{ paddingBottom: '60px' }}>
+        <div style={{
+            paddingBottom: '60px',
+            backgroundColor: storeInfo?.background_color || 'var(--background-color)',
+            minHeight: '100vh',
+            '--primary-color': storeInfo?.primary_color || '#10b981',
+            '--primary-dark': adjustColor(storeInfo?.primary_color || '#10b981', -30),
+            '--primary-light': adjustColor(storeInfo?.primary_color || '#10b981', 30),
+            '--secondary-color': storeInfo?.secondary_color || '#d1fae5',
+        }}>
             {/* Super Admin Oversight Bar */}
             {user && user.role === 'super_admin' && (
                 <div className="oversight-bar" style={{
@@ -459,13 +449,7 @@ const StoreDetails = () => {
             )}
             <div className="store-details-container" style={{
                 padding: '20px 5%',
-                minHeight: '100vh',
                 transition: 'all 0.3s ease',
-                backgroundColor: storeInfo?.background_color || '#ffffff',
-                '--primary-color': storeInfo?.primary_color || '#10b981',
-                '--primary-dark': adjustColor(storeInfo?.primary_color || '#10b981', -30),
-                '--primary-light': adjustColor(storeInfo?.primary_color || '#10b981', 30),
-                '--secondary-color': storeInfo?.secondary_color || '#d1fae5',
             }}>
                 {/* Floating Cart Icon */}
                 {user && user.role !== 'super_admin' && !isCartOpen && (

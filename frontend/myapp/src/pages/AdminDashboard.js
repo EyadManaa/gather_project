@@ -233,7 +233,7 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             await axios.post(`/api/sections/${store.id}`, sectionForm);
-            setSectionForm({ name: '' });
+            setSectionForm({ name: '', parent_id: '' });
             fetchProductSections(store.id);
             showAlert('Section added', 'success');
         } catch (err) { showAlert('Error adding section', 'error'); }
@@ -1139,16 +1139,27 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
 
-                                        <form onSubmit={handleAddSection} className="admin-form-grid" style={{ display: 'flex', gap: '12px', marginBottom: '25px', alignItems: 'center' }}>
+                                        <form onSubmit={handleAddSection} className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', marginBottom: '25px', alignItems: 'center' }}>
                                             <input
                                                 type="text"
                                                 placeholder="Section Name (e.g., 'Appetizers')"
                                                 className="form-control"
-                                                style={{ flex: 1, marginBottom: 0, height: '45px', borderRadius: '12px' }}
+                                                style={{ marginBottom: 0, height: '45px', borderRadius: '12px' }}
                                                 value={sectionForm.name}
                                                 onChange={e => setSectionForm({ ...sectionForm, name: e.target.value })}
                                                 required
                                             />
+                                            <select
+                                                className="form-control"
+                                                style={{ marginBottom: 0, height: '45px', borderRadius: '12px' }}
+                                                value={sectionForm.parent_id || ''}
+                                                onChange={e => setSectionForm({ ...sectionForm, parent_id: e.target.value || null })}
+                                            >
+                                                <option value="">None (Top Level Category)</option>
+                                                {productSections.filter(s => !s.parent_id).map(s => (
+                                                    <option key={s.id} value={s.id}>{s.name} (Child Category)</option>
+                                                ))}
+                                            </select>
                                             <button type="submit" className="btn btn-primary" style={{ width: '140px', height: '45px', padding: 0 }}>Add Section</button>
                                         </form>
 
