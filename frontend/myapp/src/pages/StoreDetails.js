@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
-import { FaStar, FaInstagram, FaTiktok, FaFacebook, FaLinkedin, FaShoppingCart, FaStore, FaShieldAlt, FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaStar, FaInstagram, FaTiktok, FaFacebook, FaLinkedin, FaShoppingCart, FaStore, FaShieldAlt, FaArrowLeft, FaChevronLeft, FaChevronRight, FaInfoCircle } from 'react-icons/fa';
 import ModernFileUpload from '../components/ModernFileUpload';
 import RatingModal from '../components/RatingModal';
 import { useUI } from '../context/UIContext';
@@ -25,6 +25,151 @@ const adjustColor = (color, amount) => {
     const g = clamp(((num >> 8) & 0x00FF) + amount);
     const b = clamp((num & 0x0000FF) + amount);
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+};
+
+const ProductCard = ({ product, addToCart, getImageUrl, user, storeInfo }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    return (
+        <div className="modern-product-card" style={{
+            opacity: product.is_out_of_stock ? 0.7 : 1,
+            filter: product.is_out_of_stock ? 'grayscale(0.5)' : 'none',
+            position: 'relative'
+        }}>
+            {/* Info Button with Tooltip */}
+            <div
+                className="product-info-btn-container"
+                style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    zIndex: 10
+                }}
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setShowTooltip(!showTooltip);
+                }}
+            >
+                <button
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '30px',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'var(--primary-color)',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                        fontSize: '1.1rem'
+                    }}
+                >
+                    <FaInfoCircle />
+                </button>
+
+                {/* Description Tooltip */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '120%',
+                        left: '0',
+                        width: '220px',
+                        backgroundColor: 'white',
+                        color: '#333',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        boxShadow: '0 5px 15px rgba(0,0,0,0.15)',
+                        fontSize: '0.85rem',
+                        lineHeight: '1.5',
+                        zIndex: 20,
+                        opacity: showTooltip ? 1 : 0,
+                        visibility: showTooltip ? 'visible' : 'hidden',
+                        transform: showTooltip ? 'translateY(0)' : 'translateY(10px)',
+                        transition: 'all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1)',
+                        pointerEvents: 'none',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                    }}
+                >
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary-dark)' }}>Description</div>
+                    {product.description || 'No description available for this product.'}
+
+                    {/* Tiny arrow pointing up */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        left: '10px',
+                        width: '12px',
+                        height: '12px',
+                        background: 'white',
+                        transform: 'rotate(45deg)',
+                        borderTop: '1px solid rgba(0,0,0,0.05)',
+                        borderLeft: '1px solid rgba(0,0,0,0.05)'
+                    }}></div>
+                </div>
+            </div>
+
+            {!!product.is_out_of_stock && (
+                <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: '#dc2626',
+                    color: 'white',
+                    padding: '5px 12px',
+                    borderRadius: '20px',
+                    fontWeight: 'bold',
+                    fontSize: '0.7rem',
+                    zIndex: 2,
+                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
+                }}>
+                    Out of Stock
+                </div>
+            )}
+            <div className="modern-product-image-container">
+                {product.image ? (
+                    <img src={getImageUrl(product.image)} alt={product.name} />
+                ) : (
+                    <div className="placeholder-product-img">
+                        <FaStore />
+                    </div>
+                )}
+            </div>
+            <div className="modern-product-content">
+                <div>
+                    <h3 className="modern-product-name">{product.name}</h3>
+                    <p className="modern-product-desc" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: '2',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                    }}>{product.description}</p>
+                </div>
+                <div className="modern-product-footer">
+                    <span className="modern-product-price">${parseFloat(product.price).toFixed(2)}</span>
+                    {user?.role !== 'super_admin' && (
+                        <button
+                            className={`btn ${(!storeInfo?.is_open || product.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
+                            onClick={() => storeInfo?.is_open && !product.is_out_of_stock && addToCart(product.id)}
+                            style={{
+                                padding: '8px 15px',
+                                fontSize: '0.85rem',
+                                borderRadius: '15px',
+                                cursor: (!storeInfo?.is_open || product.is_out_of_stock) ? 'not-allowed' : 'pointer'
+                            }}
+                            disabled={!storeInfo?.is_open || product.is_out_of_stock}
+                        >
+                            {!storeInfo?.is_open ? 'Closed' : product.is_out_of_stock ? 'Sold Out' : 'Add'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const ProductScrollSection = ({ products, addToCart, getImageUrl, user, storeInfo }) => {
@@ -72,62 +217,14 @@ const ProductScrollSection = ({ products, addToCart, getImageUrl, user, storeInf
                 onScroll={checkScroll}
             >
                 {products.map(p => (
-                    <div key={p.id} className="modern-product-card" style={{
-                        opacity: p.is_out_of_stock ? 0.7 : 1,
-                        filter: p.is_out_of_stock ? 'grayscale(0.5)' : 'none',
-                        position: 'relative'
-                    }}>
-                        {!!p.is_out_of_stock && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                background: '#dc2626',
-                                color: 'white',
-                                padding: '5px 12px',
-                                borderRadius: '20px',
-                                fontWeight: 'bold',
-                                fontSize: '0.7rem',
-                                zIndex: 2,
-                                boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
-                            }}>
-                                Out of Stock
-                            </div>
-                        )}
-                        <div className="modern-product-image-container">
-                            {p.image ? (
-                                <img src={getImageUrl(p.image)} alt={p.name} />
-                            ) : (
-                                <div className="placeholder-product-img">
-                                    <FaStore />
-                                </div>
-                            )}
-                        </div>
-                        <div className="modern-product-content">
-                            <div>
-                                <h3 className="modern-product-name">{p.name}</h3>
-                                <p className="modern-product-desc">{p.description}</p>
-                            </div>
-                            <div className="modern-product-footer">
-                                <span className="modern-product-price">${parseFloat(p.price).toFixed(2)}</span>
-                                {user?.role !== 'super_admin' && (
-                                    <button
-                                        className={`btn ${(!storeInfo?.is_open || p.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
-                                        onClick={() => storeInfo?.is_open && !p.is_out_of_stock && addToCart(p.id)}
-                                        style={{
-                                            padding: '8px 15px',
-                                            fontSize: '0.85rem',
-                                            borderRadius: '15px',
-                                            cursor: (!storeInfo?.is_open || p.is_out_of_stock) ? 'not-allowed' : 'pointer'
-                                        }}
-                                        disabled={!storeInfo?.is_open || p.is_out_of_stock}
-                                    >
-                                        {!storeInfo?.is_open ? 'Closed' : p.is_out_of_stock ? 'Sold Out' : 'Add'}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    <ProductCard
+                        key={p.id}
+                        product={p}
+                        addToCart={addToCart}
+                        getImageUrl={getImageUrl}
+                        user={user}
+                        storeInfo={storeInfo}
+                    />
                 ))}
             </div>
 
@@ -659,23 +756,26 @@ const StoreDetails = () => {
                     <>
                         <div className="store-custom-navbar" style={{
                             background: 'white',
-                            padding: '0 30px',
-                            borderRadius: '30px',
+                            padding: windowWidth <= 768 ? '10px 0' : '0 30px',
+                            borderRadius: windowWidth <= 768 ? '15px' : '30px',
                             display: 'flex',
-                            gap: '5px',
+                            flexDirection: windowWidth <= 768 ? 'column' : 'row',
+                            gap: windowWidth <= 768 ? '0' : '5px',
                             marginBottom: '30px',
                             boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                             position: 'sticky',
                             top: '20px',
                             zIndex: 1000,
-                            width: 'fit-content',
+                            width: windowWidth <= 768 ? '95%' : 'fit-content',
                             margin: '0 auto 30px',
                             transform: showNavbar ? 'translateY(0)' : 'translateY(-100px)',
                             opacity: showNavbar ? 1 : 0,
                             transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
                             pointerEvents: showNavbar ? 'auto' : 'none',
-                            alignItems: 'center',
-                            border: '1px solid rgba(0,0,0,0.02)'
+                            alignItems: windowWidth <= 768 ? 'stretch' : 'center',
+                            border: '1px solid rgba(0,0,0,0.02)',
+                            maxHeight: windowWidth <= 768 ? '70vh' : 'none',
+                            overflowY: windowWidth <= 768 ? 'auto' : 'visible'
                         }}>
                             {
                                 navItems.map(item => {
@@ -691,7 +791,10 @@ const StoreDetails = () => {
                                         <div
                                             key={item.id}
                                             className={`nav-item-container ${activeDropdown === item.id ? 'active' : ''}`}
-                                            style={{ position: 'relative' }}
+                                            style={{
+                                                position: 'relative',
+                                                borderBottom: windowWidth <= 768 ? '1px solid #f0f0f0' : 'none'
+                                            }}
                                         >
                                             <button
                                                 onClick={(e) => {
@@ -700,33 +803,40 @@ const StoreDetails = () => {
                                                         setActiveDropdown(activeDropdown === item.id ? null : item.id);
                                                     } else {
                                                         const element = document.getElementById(item.section_id);
-                                                        if (element) element.scrollIntoView({ behavior: 'smooth' });
+                                                        if (element) {
+                                                            const yOffset = -150;
+                                                            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                                            window.scrollTo({ top: y, behavior: 'smooth' });
+                                                        }
                                                         setActiveDropdown(null);
                                                     }
                                                 }}
                                                 style={{
                                                     background: 'none',
                                                     border: 'none',
-                                                    padding: '16px 20px',
+                                                    padding: windowWidth <= 768 ? '15px 20px' : '16px 20px',
                                                     color: activeDropdown === item.id ? 'var(--primary-color)' : 'var(--primary-dark)',
                                                     fontWeight: '700',
                                                     cursor: 'pointer',
                                                     fontSize: '0.95rem',
                                                     display: 'flex',
                                                     alignItems: 'center',
+                                                    justifyContent: windowWidth <= 768 ? 'space-between' : 'flex-start',
                                                     gap: '6px',
-                                                    borderBottom: '3px solid transparent',
-                                                    transition: 'all 0.2s'
+                                                    borderBottom: windowWidth <= 768 ? 'none' : '3px solid transparent',
+                                                    transition: 'all 0.2s',
+                                                    width: '100%',
+                                                    textAlign: 'left'
                                                 }}
                                                 className="nav-main-btn"
                                             >
                                                 {item.label}
                                                 {children.length > 0 && (
                                                     <span style={{
-                                                        fontSize: '0.6em',
+                                                        fontSize: '0.8em',
                                                         opacity: 0.5,
                                                         transform: activeDropdown === item.id ? 'rotate(180deg)' : 'none',
-                                                        transition: 'transform 0.2s'
+                                                        transition: 'transform 0.3s ease'
                                                     }}>▼</span>
                                                 )}
                                             </button>
@@ -734,19 +844,21 @@ const StoreDetails = () => {
                                             {/* Dropdown for Children */}
                                             {children.length > 0 && (
                                                 <div className="nav-dropdown" style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: '50%',
-                                                    transform: activeDropdown === item.id ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(10px)',
-                                                    minWidth: '200px',
-                                                    background: 'white',
-                                                    borderRadius: '16px',
-                                                    boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
-                                                    padding: '8px',
-                                                    opacity: activeDropdown === item.id ? 1 : 0,
-                                                    visibility: activeDropdown === item.id ? 'visible' : 'hidden',
-                                                    transition: 'all 0.2s ease',
-                                                    border: '1px solid rgba(0,0,0,0.04)',
+                                                    position: windowWidth <= 768 ? 'static' : 'absolute',
+                                                    top: windowWidth <= 768 ? 'auto' : '100%',
+                                                    left: windowWidth <= 768 ? 'auto' : '50%',
+                                                    transform: windowWidth <= 768 ? 'none' : (activeDropdown === item.id ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(10px)'),
+                                                    minWidth: windowWidth <= 768 ? '100%' : '200px',
+                                                    background: windowWidth <= 768 ? '#f8fafc' : 'white',
+                                                    borderRadius: windowWidth <= 768 ? '0' : '16px',
+                                                    boxShadow: windowWidth <= 768 ? 'none' : '0 10px 40px rgba(0,0,0,0.12)',
+                                                    padding: windowWidth <= 768 ? (activeDropdown === item.id ? '5px 0 15px 0' : '0') : '8px',
+                                                    opacity: windowWidth <= 768 ? (activeDropdown === item.id ? 1 : 0) : (activeDropdown === item.id ? 1 : 0),
+                                                    visibility: windowWidth <= 768 ? (activeDropdown === item.id ? 'visible' : 'hidden') : (activeDropdown === item.id ? 'visible' : 'hidden'),
+                                                    maxHeight: windowWidth <= 768 ? (activeDropdown === item.id ? '500px' : '0') : 'none',
+                                                    overflow: 'hidden',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    border: windowWidth <= 768 ? 'none' : '1px solid rgba(0,0,0,0.04)',
                                                     zIndex: 1001
                                                 }}>
                                                     {children.map(child => (
@@ -756,27 +868,32 @@ const StoreDetails = () => {
                                                                 e.stopPropagation();
                                                                 const element = document.getElementById(child.name.toLowerCase().replace(/\s+/g, '-'));
                                                                 if (element) {
-                                                                    element.scrollIntoView({ behavior: 'smooth' });
+                                                                    const yOffset = -150;
+                                                                    const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                                                                    window.scrollTo({ top: y, behavior: 'smooth' });
                                                                 }
                                                                 setActiveDropdown(null);
                                                             }}
                                                             style={{
-                                                                padding: '10px 15px',
+                                                                padding: windowWidth <= 768 ? '12px 30px' : '10px 15px',
                                                                 cursor: 'pointer',
                                                                 color: '#4b5563',
                                                                 fontSize: '0.9rem',
                                                                 fontWeight: '500',
-                                                                borderRadius: '10px',
+                                                                borderRadius: windowWidth <= 768 ? '0' : '10px',
                                                                 transition: 'all 0.1s',
-                                                                textAlign: 'center'
+                                                                textAlign: windowWidth <= 768 ? 'left' : 'center',
+                                                                borderLeft: windowWidth <= 768 ? '3px solid transparent' : 'none'
                                                             }}
                                                             onMouseEnter={(e) => {
                                                                 e.target.style.background = 'var(--secondary-color)';
                                                                 e.target.style.color = 'var(--primary-dark)';
+                                                                if (windowWidth <= 768) e.target.style.borderLeft = '3px solid var(--primary-color)';
                                                             }}
                                                             onMouseLeave={(e) => {
                                                                 e.target.style.background = 'transparent';
                                                                 e.target.style.color = '#4b5563';
+                                                                if (windowWidth <= 768) e.target.style.borderLeft = '3px solid transparent';
                                                             }}
                                                         >
                                                             {child.name}
@@ -791,9 +908,9 @@ const StoreDetails = () => {
                         </div>
                         <style>{`
                             .nav-item-container:hover .nav-dropdown {
-                                opacity: 1 !important;
-                                visibility: visible !important;
-                                transform: translateX(-50%) translateY(0) !important;
+                                opacity: ${windowWidth <= 768 ? 'initial' : '1'} !important;
+                                visibility: ${windowWidth <= 768 ? 'initial' : 'visible'} !important;
+                                transform: ${windowWidth <= 768 ? 'none' : 'translateX(-50%) translateY(0)'} !important;
                             }
                             .nav-item-container:hover .nav-main-btn {
                                 color: var(--primary-color) !important;
@@ -838,62 +955,14 @@ const StoreDetails = () => {
                             ) : (
                                 <div className="grid">
                                     {groupedProducts[section].map(p => (
-                                        <div key={p.id} className="modern-product-card" style={{
-                                            opacity: p.is_out_of_stock ? 0.7 : 1,
-                                            filter: p.is_out_of_stock ? 'grayscale(0.5)' : 'none',
-                                            position: 'relative'
-                                        }}>
-                                            {!!p.is_out_of_stock && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: '10px',
-                                                    right: '10px',
-                                                    background: '#dc2626',
-                                                    color: 'white',
-                                                    padding: '5px 12px',
-                                                    borderRadius: '20px',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '0.7rem',
-                                                    zIndex: 2,
-                                                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
-                                                }}>
-                                                    Out of Stock
-                                                </div>
-                                            )}
-                                            <div className="modern-product-image-container">
-                                                {p.image ? (
-                                                    <img src={getImageUrl(p.image)} alt={p.name} />
-                                                ) : (
-                                                    <div className="placeholder-product-img">
-                                                        <FaStore />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="modern-product-content">
-                                                <div>
-                                                    <h3 className="modern-product-name">{p.name}</h3>
-                                                    <p className="modern-product-desc">{p.description}</p>
-                                                </div>
-                                                <div className="modern-product-footer">
-                                                    <span className="modern-product-price">${parseFloat(p.price).toFixed(2)}</span>
-                                                    {user?.role !== 'super_admin' && (
-                                                        <button
-                                                            className={`btn ${(!storeInfo?.is_open || p.is_out_of_stock) ? 'btn-secondary' : 'btn-primary'}`}
-                                                            onClick={() => storeInfo?.is_open && !p.is_out_of_stock && addToCart(p.id)}
-                                                            style={{
-                                                                padding: '8px 15px',
-                                                                fontSize: '0.85rem',
-                                                                borderRadius: '15px',
-                                                                cursor: (!storeInfo?.is_open || p.is_out_of_stock) ? 'not-allowed' : 'pointer'
-                                                            }}
-                                                            disabled={!storeInfo?.is_open || p.is_out_of_stock}
-                                                        >
-                                                            {!storeInfo?.is_open ? 'Closed' : p.is_out_of_stock ? 'Sold Out' : 'Add'}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <ProductCard
+                                            key={p.id}
+                                            product={p}
+                                            addToCart={addToCart}
+                                            getImageUrl={getImageUrl}
+                                            user={user}
+                                            storeInfo={storeInfo}
+                                        />
                                     ))}
                                 </div>
                             )}

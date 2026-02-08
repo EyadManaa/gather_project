@@ -415,7 +415,7 @@ const Stores = () => {
                             </span>
                         </div>
 
-                        {groupedStores[category].length > (windowWidth <= 768 ? 2 : 4) ? (
+                        {groupedStores[category].length > (windowWidth <= 768 ? 1 : 4) ? (
                             <StoreScrollSection
                                 stores={groupedStores[category]}
                                 toggleFavorite={toggleFavorite}
