@@ -7,6 +7,7 @@ import CartSidebar from './components/CartSidebar';
 import Notification from './components/Notification';
 import GlobalModal from './components/GlobalModal';
 import ScrollToTop from './components/ScrollToTop';
+import Footer from './components/Footer';
 import { UIProvider } from './context/UIContext';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -53,22 +54,23 @@ const AppContent = () => {
   );
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
       <CartSidebar />
       <Notification />
       <GlobalModal />
       <ScrollToTop />
       {isImmersive ? (
-        <div style={{ paddingTop: '0' }}>
+        <div style={{ paddingTop: '0', flex: 1 }}>
           {routes}
         </div>
       ) : (
-        <div className="container" style={{ paddingTop: '90px' }}>
+        <div className="container" style={{ paddingTop: '90px', paddingBottom: '40px', flex: 1 }}>
           {routes}
         </div>
       )}
-    </>
+      <Footer />
+    </div>
   );
 };
 
